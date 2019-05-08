@@ -8,6 +8,9 @@ export default StyleSheet.create({
   contentContainerStyle: {
     // flex: 1
   },
+  text: {
+    fontSize: 16,
+  },
   heading1: {
     fontSize: 25,
   },

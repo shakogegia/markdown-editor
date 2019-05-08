@@ -87,8 +87,10 @@ class Toolbar extends React.Component {
           <Divider />
 
 
-          <Button name="Code" />
-          <Button name="Link" />
+          {/*
+            <Button name="Code" />
+            <Button name="Link" />
+          */}
           <Button name="Duplicate" onPress={this.emit(EVENTS.DUPLICATE_ROW)} />
           <Divider />
 
@@ -97,10 +99,10 @@ class Toolbar extends React.Component {
           <Divider />
 
           {/*
+          */}
             <Button icon="format-indent-increase" onPress={this.emit(EVENTS.CHANGE_BLOCK_INDENT, { direction: 'increase' })} />
             <Button icon="format-indent-decrease" onPress={this.emit(EVENTS.CHANGE_BLOCK_INDENT, { direction: 'decrease' })} />
             <Divider />
-          */}
 
           <Button icon="delete" onPress={this.emit(EVENTS.DELETE_BLOCK)} />
           <Divider />

@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "react-native-markdown-editro",
+    "name": "react-native-markdown-editor",
     "slug": "react-native-markdown-editor",
     "privacy": "public",
     "sdkVersion": "32.0.0",
@@ -8,8 +8,8 @@
       "ios",
       "android"
     ],
-    "version": "1.0.0",
-    "orientation": "portrait",
+    "version": "1.0.1",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "splash": {
       "image": "./assets/splash.png",

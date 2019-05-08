@@ -1,7 +1,7 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 
-const StyledText = ({ text, textStyles = [] }) => {
+const StyledText = ({ text, textStyles = [], type = 'text' }) => {
   let inputStyles = [styles.default]
   textStyles.forEach(item => {
     const key = item.toLowerCase()
@@ -9,6 +9,10 @@ const StyledText = ({ text, textStyles = [] }) => {
       inputStyles.push(styles[key])
     }
   });
+
+  if(styles[type]) {
+    inputStyles.push(styles[type])
+  }
 
   return (
     <Text
@@ -32,6 +36,15 @@ const styles = StyleSheet.create({
   },
   underline: {
     textDecorationLine: 'underline'
+  },
+  heading1: {
+    fontSize: 25,
+  },
+  heading2: {
+    fontSize: 21,
+  },
+  heading3: {
+    fontSize: 18,
   },
 })
 

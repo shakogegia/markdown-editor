@@ -108,9 +108,9 @@ class Editor extends React.Component {
 
     var BUTTONS = {
       text:"Body",
-      heading1:"Heading 1",
-      heading2:"Heading 2",
-      heading3:"Heading 3",
+      [BLOCK_TYPES.HEADING1]:"Heading 1",
+      [BLOCK_TYPES.HEADING2]:"Heading 2",
+      [BLOCK_TYPES.HEADING3]:"Heading 3",
       blockquote:"Blockquote",
       bullets:"Bulleted List",
       numbers:"Numbered List",
@@ -129,13 +129,13 @@ class Editor extends React.Component {
       if (keys[i] === 'text') {
         this.changeBlockType({ index: activeIndex, type: BLOCK_TYPES.TEXT })
       }
-      if (keys[i] === 'heading1') {
+      if (keys[i] === BLOCK_TYPES.HEADING1) {
         this.changeBlockType({ index: activeIndex, type: BLOCK_TYPES.HEADING1 })
       }
-      if (keys[i] === 'heading2') {
+      if (keys[i] === BLOCK_TYPES.HEADING2) {
         this.changeBlockType({ index: activeIndex, type: BLOCK_TYPES.HEADING2 })
       }
-      if (keys[i] === 'heading3') {
+      if (keys[i] === BLOCK_TYPES.HEADING3) {
         this.changeBlockType({ index: activeIndex, type: BLOCK_TYPES.HEADING3 })
       }
       if (keys[i] === 'blockquote') {
@@ -248,8 +248,8 @@ class Editor extends React.Component {
       if(nextBlock) {
         blocks[activeIndex+1] = currentBlock
         blocks[activeIndex] = nextBlock
+        this.focusBlock({ index: activeIndex+1 })
         this.setState({ blocks, extraData: Date.now() }, () => {
-          this.focusBlock({ index: activeIndex+1 })
           setTimeout(() => {
             this.focusBlock({ index: activeIndex+1 })
           }, 100);
@@ -310,55 +310,7 @@ class Editor extends React.Component {
     if(!val) {
       // this.removeBlock({ index, focusPrev: true })
     } else {
-      // blocks[index].value = val
-      // this.setState({ blocks })
-
-      // const lastChar = val[val.length -1];
-      // blocks[index].value = val
-      // let itemBlocks = item.blocks || []
-      // const newChar = { text: lastChar, styles: activeStyles }
-      // itemBlocks = itemBlocks.concat([newChar])
-      // // itemBlocks.push(newChar)
-
-      // console.tron.display({
-      //   name: 'onChangeText',
-      //   value: { props: blocks[index].blocks, itemBlocks },
-      // })
-
-      // blocks[index].blocks = itemBlocks
-      // this.setState({ blocks, extraData: Date.now() })
-
-
-      const keyValue = val[val.length -1];
-      const itemBlocks = item.blocks || []
-      const lastBlock = itemBlocks[itemBlocks.length - 1]
-
-      if(lastBlock) {
-        const isEqual = _.isEqual(activeStyles.sort(), lastBlock.styles.sort());
-  
-        // console.log(isEqual)
-  
-        if (isEqual) {
-          // lastBlock.text += keyValue
-
-          // const newBlock = { text: keyValue, styles: activeStyles }
-          // const itemBlocks = item.blocks || []
-          // itemBlocks.push(newBlock)
-          // item.blocks = itemBlocks
-          // item.value = val
-          // blocks[index] = item
-          // this.setState({ blocks, extraData: Date.now() })
-  
-          return
-        }
-
-      }
-
-      const newBlock = { text: keyValue, styles: activeStyles }
-      itemBlocks.push(newBlock)
-      item.blocks = itemBlocks
-      item.value = val
-      blocks[index] = item
+      blocks[index].value = val
       this.setState({ blocks, extraData: Date.now() })
     }
   }
@@ -369,7 +321,7 @@ class Editor extends React.Component {
     const { value = '' } = currentBlock
 
     if (keyValue === 'Backspace') {
-      console.log(value)
+      // console.log(value)
       
       // if (this.lastBlock
       //     && this.lastBlock.id === currentBlock.id
@@ -488,6 +440,7 @@ class Editor extends React.Component {
     const block = blocks[index]
     if(block) {
       block.type = type
+      block.extraData = Date.now()
       blocks[index] = block
       this.setState({ blocks, extraData: Date.now() })
     }
@@ -532,7 +485,7 @@ class Editor extends React.Component {
     if(item.type === BLOCK_TYPES.BLOCKQUOTE) {
       return styles.blockquote
     }
-    return styles.textInput
+    return {}
   }
   
   getNumberOrder = ({ item, index }) => {
@@ -564,31 +517,36 @@ class Editor extends React.Component {
         {isNumbers && <Text style={styles.numberOrder}>{numberOrder}.</Text>}
         <TextInput
           underlineColorAndroid="transparent"
-          allowFontScaling={false}
           ref={(input) => { this.textInputRefs[index] = input; }}
           placeholder={placeholder}
           onSubmitEditing={this.onSubmitEditing({ item, index })}
           blurOnSubmit={false}
           onChangeText={this.onChangeText({ item, index })}
           onKeyPress={this.handleKeyPress({ item, index })}
-          style={[inputStyles]}
+          style={[styles.textInput, inputStyles]}
           onFocus={this.onFocus({ item, index })}
           onBlur={this.onBlur({ item, index })}
           onSelectionChange={this.onSelectionChange({ item, index })}
-          selectTextOnFocus={false}
           clearButtonMode="never"
-          keyboardAppearance="dark"
           autoCorrect={false}
           autoCapitalize="none"
           multiline={false}
         >
-          {blocks.map((block, i) => (
-            <StyledText
-              key={`${item.id}-${i}`}
-              textStyles={block.styles}
-              text={block.text}
-            />
-          ))}
+          {/*
+            {blocks.map((block, i) => (
+              <StyledText
+                key={`${item.id}-${i}`}
+                textStyles={block.styles}
+                text={block.text}
+                type={item.type}
+              />
+            ))}
+          */}
+
+          <StyledText
+            text={item.value}
+            type={item.type}
+          />
         </TextInput>
       </View>
     )
@@ -596,6 +554,8 @@ class Editor extends React.Component {
 
   render() {
     const { blocks, extraData } = this.state
+
+    // console.log("blocks", blocks)
 
     return (
       <FlatList
