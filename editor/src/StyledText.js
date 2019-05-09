@@ -37,6 +37,10 @@ const styles = StyleSheet.create({
   underline: {
     textDecorationLine: 'underline'
   },
+  strikethrough: {
+    textDecorationLine: 'line-through',
+    color: 'gray',
+  },
   heading1: {
     fontSize: 25,
   },

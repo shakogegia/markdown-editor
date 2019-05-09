@@ -29,6 +29,7 @@ export default StyleSheet.create({
   },
   textInput: {
     flex: 1,
+    paddingTop: 0,
     // backgroundColor: 'red'
   },
   row: {

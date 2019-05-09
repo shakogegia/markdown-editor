@@ -1,7 +1,11 @@
 import React from 'react';
-import { StyleSheet, View, SafeAreaView } from 'react-native';
+import { StyleSheet, View, SafeAreaView, TouchableOpacity } from 'react-native';
 import { KeyboardAwareView } from 'react-native-keyboard-aware-view'
-import { Container, Header, Body, Title } from "native-base";
+import { Container, Header, Body, Title, Right, Left, Button, Text } from "native-base";
+
+
+import getEmitter from "./editor/src/EventEmitter";
+import EVENTS from "./editor/src/Events";
 
 import {
   Editor,
@@ -9,21 +13,31 @@ import {
   Context
 } from "./editor";
 
-const test = () => {
-  alert()
-}
+
+const eventEmitter = getEmitter()
 
 export default class App extends React.Component {
 
 
+  logState () {
+    eventEmitter.emit(EVENTS.LOG_STATE)
+  }
 
   render() {
     return (
       <Container>
         <Header>
+          <Left>
+            <Text></Text>
+          </Left>
           <Body>
             <Title>Text Editor</Title>
           </Body>
+          <Right>
+            <TouchableOpacity onPress={this.logState}>
+              <Text>Log State</Text>
+            </TouchableOpacity>
+          </Right>
         </Header>
         <SafeAreaView style={{ flex: 1 }}>
           <View style={styles.container}>

@@ -14,14 +14,15 @@ const Divider = () => (
   <View style={styles.divider} />
 )
 
-const Button = ({ icon, name, isActive = false, arrow = false, onPress = () => {} }) => {
+const Button = ({ icon, name, isActive = false, isDisabled = false, arrow = false, onPress = () => {} }) => {
   const hasIcon = !!icon
   const hasName = !!name
 
   const activeButtonStyle = isActive ? styles.activeButton : {}
+  const disabledButtonStyle = isDisabled ? styles.disabledButton : {}
   
   return (
-  <TouchableOpacity style={[styles.button, activeButtonStyle]} onPress={() => onPress()}>
+  <TouchableOpacity style={[styles.button, activeButtonStyle, disabledButtonStyle]} disabled={isDisabled} onPress={() => onPress()}>
     {hasIcon && <MaterialIcons name={icon} color="black" size={20} />}
     {hasName && <Text>{name}</Text>}
     {arrow && <MaterialIcons name={"keyboard-arrow-down"} color="#e3e3e3" size={16} />}
@@ -33,11 +34,13 @@ const listeners = {}
 class Toolbar extends React.Component {
 
   state = {
-    activeStyles: []
+    activeStyles: [],
+    activeRowType: ''
   }
 
   componentDidMount() {
     listeners.activeStylesChanged = getEmitter().addListener(EVENTS.ACTIVE_STYLE_CHANGED, this.activeStylesChanged)
+    listeners.rowTypeChanged = getEmitter().addListener(EVENTS.ROW_TYPE_CHANGED, this.rowTypeChanged)
   }
 
   componentWillUnmount() {
@@ -49,18 +52,28 @@ class Toolbar extends React.Component {
   activeStylesChanged = ({ activeStyles }) => {
     this.setState({ activeStyles })
   }
+  
+  rowTypeChanged = ({ type }) => {
+    this.setState({ activeRowType: type })
+  }
 
   emit = (event, params = {}) => () => {
     eventEmitter.emit(event, params)
   }
 
   render() {
-    const { activeStyles } = this.state
+    const { activeStyles, activeRowType } = this.state
 
 
     const isActiveBold = activeStyles.includes('bold')
     const isActiveItalic = activeStyles.includes('italic')
     const isActiveUnderline = activeStyles.includes('underline')
+    const isActiveStrikeThrough = activeStyles.includes('strikethrough')
+
+    const isDisabledBold = activeRowType.includes('heading')
+    const isDisabledItalic = activeRowType.includes('heading')
+    const isDisabledUnderline = activeRowType.includes('heading')
+    const isDisabledStrikeThrough = activeRowType.includes('heading')
 
     return (
       <View style={styles.toolbar}>
@@ -78,12 +91,10 @@ class Toolbar extends React.Component {
           <Button name="Turn Into" arrow onPress={this.emit(EVENTS.CHANGE_BLOCK_TYPE)} />
           <Divider />
 
-          <Button icon="format-bold" isActive={isActiveBold} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'bold'})} />
-          <Button icon="format-italic" isActive={isActiveItalic} o onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'italic'})} />
-          <Button icon="format-underlined" isActive={isActiveUnderline} o onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'underline'})} />
-          {/*
-            <Button icon="strikethrough-s" />
-          */}
+          <Button icon="format-bold" isActive={isActiveBold} isDisabled={isDisabledBold} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'bold'})} />
+          <Button icon="format-italic" isActive={isActiveItalic} isDisabled={isDisabledItalic} o onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'italic'})} />
+          <Button icon="format-underlined" isActive={isActiveUnderline} isDisabled={isDisabledUnderline} o onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'underline'})} />
+          <Button icon="strikethrough-s" isActive={isActiveStrikeThrough} isDisabled={isDisabledStrikeThrough} o onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'strikethrough'})} />
           <Divider />
 
 
@@ -160,6 +171,9 @@ const styles = StyleSheet.create({
   },
   activeButton: {
     backgroundColor: '#e7e7e7'
+  },
+  disabledButton: {
+    opacity: 0.5
   }
 })
 

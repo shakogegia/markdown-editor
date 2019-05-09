@@ -140,3 +140,250 @@ export const convertToRaw = (data) => {
 
   return result
 }
+
+export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
+  const rowCursorAt = cursorAt !== null ? cursorAt : selection.start
+
+  let currentBlock = {}
+  let blockIndex = null
+  let pointerAt = null
+
+  // if (selection.start === selection.end) {
+
+    if(row && row.value && ( rowCursorAt === 0 || rowCursorAt === 1 )) {
+      // console.log("First block:", rowCursorAt)
+      
+      blockIndex = 0
+      pointerAt = rowCursorAt
+      currentBlock = row[0]
+
+    } else if (row && row.value) {
+      const beforePointerText = row.value.substring(0, rowCursorAt)
+      
+      // console.log("beforePointerText::", beforePointerText, cursorAt)
+      
+      const { blocks = [] } = row
+      let blockTexts = ""
+
+
+      for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+
+        blockTexts += block.text
+
+        // How are yo|u man?
+        // [How ][are ][yo|u ][man?]
+        // Block: 3, i: 2, index: 10
+
+        if(blockTexts.length >= beforePointerText.length) {
+          const blockStyles = block.styles || []
+          
+          currentBlock = block
+          blockIndex = i
+          // pointerAt = blockTexts.length - beforePointerText.length
+
+          // if(pointerAt > rowCursorAt) {
+          //   pointerAt = rowCursorAt
+          // }
+
+          const afterBlockLength = blockTexts.length - beforePointerText.length
+          
+          const actual = block.text.length - afterBlockLength // > pointerAt
+            // ? block.text.length - afterBlockLength - pointerAt
+            // : block.text.length - afterBlockLength
+          
+          // pointerAt = block.text.length - afterBlockLength
+          pointerAt = actual
+
+          // console.log(blockTexts.length - beforePointerText.length, block.text.length - afterBlockLength);
+          
+
+          // console.log("pointerAt::", blockTexts.length - beforePointerText.length, "--At", pointerAt)
+
+          // this.emitActiveStyles({ activeStyles: blockStyles })
+          // console.log("Active block::", i)
+          // console.log("Active block::", i, "blockTexts::", "[",blockTexts,"]", "beforePointerText::", "[",beforePointerText,"]", "pointerAt::", pointerAt, "selection.start::", selection.start)
+
+          console.tron.display({
+            name: 'getCurrentBlockInRow',
+            value: { 
+              ["Active block::"]: i,
+              ["blockTexts::"]: blockTexts,
+              ["beforePointerText::"]: beforePointerText,
+              ["pointerAt::"]: pointerAt,
+              ["actual::"]: actual,
+              ["selection::"]: selection,
+              ["length-1"]: blockTexts.length - beforePointerText.length,
+              afterBlockLength: afterBlockLength,
+              ["block.text.length"]: block.text.length
+            },
+          })
+
+          break;
+        }
+      }
+    }
+  // }
+
+  return { block: currentBlock, blockIndex, pointerAt }
+}
+
+export const getSelectedBlocks = ({ selection, row }) => {
+  const { start = 0, end } = selection
+  const startBlock = getCurrentBlockInRow({ row, cursorAt: start })
+  const endBlock = getCurrentBlockInRow({ row, cursorAt: end })
+  return { startBlock, endBlock }
+}
+
+export const splitString = (value = '', index) => [value.substring(0, index) , value.substring(index)]
+
+export const attachStylesToSelected = ({ selection, row, newStyles }) => {
+  const { startBlock, endBlock } = getSelectedBlocks({ selection, row })
+
+  const { blocks } = row
+
+  let selectedText = ''
+
+  const newBlocks = []
+
+  for (let i = 0; i < blocks.length; i++) {
+    if(i >= startBlock.blockIndex && i <= endBlock.blockIndex) {
+      const block = blocks[i];
+      const { text } = block
+
+      let blockText = text
+      
+      if (startBlock.blockIndex === endBlock.blockIndex) {
+        const blockPrevText = text.substring(0, startBlock.pointerAt)
+        const blockSelectedText = text.substring(startBlock.pointerAt, endBlock.pointerAt)
+        const blockNextText = text.substring(endBlock.pointerAt, text.length)
+        
+        console.log("Same blog", blockSelectedText, startBlock.pointerAt, endBlock.pointerAt)
+        
+        const { styles: currentStyles = [] } = block
+        
+        const prevBlock = { text: blockPrevText, styles: currentStyles }
+        const newBlock = { text: blockSelectedText, styles: [ ...currentStyles, ...newStyles ] }
+        const nextBlock = { text: blockNextText, styles: currentStyles }
+
+        newBlocks.push(prevBlock)
+        newBlocks.push(newBlock)
+        newBlocks.push(nextBlock)
+
+      } else if(i === startBlock.blockIndex) {
+        textParts = splitString(text, startBlock.pointerAt)
+        const { styles: currentStyles = [] } = block
+        const prevBlock = { text: textParts[0], styles: currentStyles }
+        const newBlock = { text: textParts[1], styles: [ ...currentStyles, ...newStyles ] }
+        newBlocks.push(prevBlock)
+        newBlocks.push(newBlock)
+      } else if (i === endBlock.blockIndex) {
+        blockText = text.substring(0, endBlock.pointerAt)
+        textParts = splitString(text, endBlock.pointerAt)
+        const { styles: currentStyles = [] } = block
+        const newBlock = { text: textParts[0], styles: [ ...currentStyles, ...newStyles ] }
+        const nextBlock = { text: textParts[1], styles: currentStyles }
+        newBlocks.push(newBlock)
+        newBlocks.push(nextBlock)
+      } else {
+        blockText = text
+        const { styles: currentStyles = [] } = block
+        const newBlock = { text: text, styles: [ ...currentStyles, ...newStyles ] }
+        newBlocks.push(newBlock)
+      }
+
+      selectedText += blockText
+    }
+  }
+
+  let p1 = blocks.slice(0, startBlock.blockIndex)
+  let p2 = blocks.slice(endBlock.blockIndex+1)
+
+  // if (startBlock.blockIndex === endBlock.blockIndex) {
+    
+  // }
+
+  const data = [...p1, ...newBlocks, ...p2]
+
+  console.tron.display({
+    name: 'data',
+    value: { p1, newBlocks, p2 },
+  })
+
+  // blocks.splice(startBlock.blockIndex, endBlock.blockIndex-startBlock.blockIndex+1);
+
+  console.tron.display({
+    name: 'newBlocks',
+    value: { newBlocks, selectedText, blocks, data, startBlock, endBlock  },
+  })
+
+
+  return { blocks: data }
+}
+
+export const removeSelectedText = ({ selection, row }) => {
+  const { blocks = [] } = row
+  const { startBlock, endBlock } = getSelectedBlocks({ selection, row })
+
+  console.tron.display({
+    name: 'removeSelectedText',
+    value: { startBlock, endBlock  },
+  })
+
+  const newBlocks = []
+
+  let p1 = blocks.slice(0, startBlock.blockIndex)
+  let p2 = blocks.slice(endBlock.blockIndex+1)
+
+  for (let i = 0; i < blocks.length; i++) {
+    if(i >= startBlock.blockIndex && i <= endBlock.blockIndex) {
+      const block = blocks[i];
+
+      const { text, styles: currentStyles = [] } = block
+
+      let blockText = text
+      
+      if (startBlock.blockIndex === endBlock.blockIndex) {
+        const blockPrevText = text.substring(0, startBlock.pointerAt)
+        const prevBlock = { text: blockPrevText, styles: currentStyles }
+        newBlocks.push(prevBlock)
+      } else if(i === startBlock.blockIndex) {
+        textParts = splitString(text, startBlock.pointerAt)
+        const { styles: currentStyles = [] } = block
+        const prevBlock = { text: textParts[0], styles: currentStyles }
+        newBlocks.push(prevBlock)
+      } else if (i === endBlock.blockIndex) {
+        blockText = text.substring(0, endBlock.pointerAt)
+        textParts = splitString(text, endBlock.pointerAt)
+        const { styles: currentStyles = [] } = block
+        const nextBlock = { text: textParts[1], styles: currentStyles }
+        newBlocks.push(nextBlock)
+      } else {
+      //   blockText = text
+      //   const { styles: currentStyles = [] } = block
+      //   const newBlock = { text: text, styles: [ ...currentStyles, ...newStyles ] }
+        // newBlocks.push(newBlock)
+      }
+
+      // selectedText += blockText
+    }
+  }
+
+  if (startBlock.blockIndex === endBlock.blockIndex) {
+    console.log("Deleted one character")
+  }
+
+  const data = [...p1, ...newBlocks, ...p2].filter(i => !!i.text)
+
+  return data
+}
+
+export const insertAt = (main_string, ins_string, pos) => {
+  if(typeof(pos) == "undefined") {
+   pos = 0;
+ }
+  if(typeof(ins_string) == "undefined") {
+   ins_string = '';
+ }
+  return main_string.slice(0, pos) + ins_string + main_string.slice(pos);
+}
