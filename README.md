@@ -1,5 +1,9 @@
 # React Native WYSIWYG
 
+Rich text editor for React Native
+
+Supports Draft.js and Markdown
+
 
 ![React Native WYSIWYG](./demo.gif)
 
