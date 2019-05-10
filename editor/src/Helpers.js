@@ -323,11 +323,13 @@ export const removeSelectedText = ({ selection, row }) => {
       const block = blocks[i];
 
       const { text, styles: currentStyles = [] } = block
-
-      let blockText = text
+      // let blockText = text
       
       if (startBlock.blockIndex === endBlock.blockIndex) {
-        const blockPrevText = text.substring(0, startBlock.pointerAt)
+        let blockPrevText = text.substring(0, startBlock.pointerAt)
+        if(startBlock.pointerAt === text.length) {
+          blockPrevText = text.slice(0, -1);
+        }
         const prevBlock = { text: blockPrevText, styles: currentStyles }
         newBlocks.push(prevBlock)
       } else if(i === startBlock.blockIndex) {
@@ -336,7 +338,7 @@ export const removeSelectedText = ({ selection, row }) => {
         const prevBlock = { text: textParts[0], styles: currentStyles }
         newBlocks.push(prevBlock)
       } else if (i === endBlock.blockIndex) {
-        blockText = text.substring(0, endBlock.pointerAt)
+        // blockText = text.substring(0, endBlock.pointerAt)
         textParts = splitString(text, endBlock.pointerAt)
         const { styles: currentStyles = [] } = block
         const nextBlock = { text: textParts[1], styles: currentStyles }
