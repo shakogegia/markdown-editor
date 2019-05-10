@@ -6,6 +6,7 @@ import { Container, Header, Body, Title, Right, Left, Button, Text } from "nativ
 
 import getEmitter from "./editor/src/EventEmitter";
 import EVENTS from "./editor/src/Events";
+import { contentState } from "./editor/src/Helpers";
 
 import {
   Editor,
@@ -25,6 +26,10 @@ export default class App extends React.Component {
 
   convert () {
     eventEmitter.emit(EVENTS.CONVERT_TO_RAW)
+  }
+
+  onChange (data) {
+    // console.log(data)
   }
 
   render() {
@@ -50,7 +55,10 @@ export default class App extends React.Component {
             
             <KeyboardAwareView keyboardShouldPersistTaps animated>
               <View style={styles.editor}>
-                <Editor />
+                <Editor
+                  data={contentState}
+                  onChange={this.onChange}
+                />
               </View>
               
               <Toolbar />

@@ -1,5 +1,5 @@
 import _ from 'lodash'
-import { STYLE_TYPES, BLOCK_TYPES } from './Constants'
+import { STYLE_TYPES, ROW_TYPES } from './Constants'
 
 import { generateId, parseRawBlock } from "./Helpers";
 
@@ -40,15 +40,15 @@ export const convertToMarkdown = ({ rows }) => {
         blockText = `__${blockText}__`
       }        
 
-      if(type === BLOCK_TYPES.HEADING1) {
+      if(type === ROW_TYPES.HEADING1) {
         blockText = `# ${blockText}`
-      } else if (type === BLOCK_TYPES.HEADING2) {
+      } else if (type === ROW_TYPES.HEADING2) {
         blockText = `## ${blockText}`
-      } else if (type === BLOCK_TYPES.HEADING3) {
+      } else if (type === ROW_TYPES.HEADING3) {
         blockText = `### ${blockText}`
-      } else if ( type === BLOCK_TYPES.BULLETS ) {
+      } else if ( type === ROW_TYPES.BULLETS ) {
         blockText = `* ${blockText}`
-      } else if ( type === BLOCK_TYPES.BLOCKQUOTE ) {
+      } else if ( type === ROW_TYPES.BLOCKQUOTE ) {
         blockText = `> ${blockText}`
       }
 
@@ -68,7 +68,7 @@ export const convertToMarkdown = ({ rows }) => {
 
 
 export const convertFromRaw = ({ contentState }) => {
-  const { blocks } = contentState
+  const { blocks = [] } = contentState
 
   const result = []
 
@@ -108,14 +108,13 @@ export const convertToRaw = ({ rows }) => {
       inlineStyleRanges: []
     }
 
-
     let type = 'unstyled'
 
-    if (row.type === BLOCK_TYPES.BULLETS) {
+    if (row.type === ROW_TYPES.BULLETS) {
       type = 'unordered-list-item'
     }
     
-    if (row.type === BLOCK_TYPES.NUMBERS) {
+    if (row.type === ROW_TYPES.NUMBERS) {
       type = 'ordered-list-item'
     }
     
@@ -146,7 +145,7 @@ export const convertToRaw = ({ rows }) => {
     result.blocks.push(item)
   })
 
-  console.log(JSON.stringify(result))
+  // console.log(JSON.stringify(result))
 
   return result
 }

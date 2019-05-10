@@ -1,6 +1,7 @@
+import _ from "lodash";
 import shortid from "shortid";
 
-import { STYLE_TYPES, BLOCK_TYPES } from './Constants'
+import { STYLE_TYPES, ROW_TYPES } from './Constants'
 
 export const generateId = () => shortid()
 
@@ -9,14 +10,14 @@ export const contentState = {"blocks":[{"key":"1la1e","text":"thi wil contain bo
 
 const getBlockType = type => {
   if (type === 'unordered-list-item') {
-    return BLOCK_TYPES.BULLETS
+    return ROW_TYPES.BULLETS
   }
   
   if (type === 'ordered-list-item') {
-    return BLOCK_TYPES.NUMBERS
+    return ROW_TYPES.NUMBERS
   }
   
-  return BLOCK_TYPES.TEXT
+  return ROW_TYPES.TEXT
 }
 
 export const parseRawBlock = block => {
@@ -94,7 +95,7 @@ export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
   let blockIndex = null
   let pointerAt = null
 
-  console.log(rowCursorAt, row, selection)
+  // console.log(rowCursorAt, row, selection)
   // if (selection.start === selection.end) {
     if(row && ( rowCursorAt === 0 || rowCursorAt === 1 )) {
       console.log("First block:", rowCursorAt)
@@ -106,7 +107,7 @@ export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
     } else if (row) {
       const beforePointerText = (row.value || '').substring(0, rowCursorAt)
       
-      console.log("beforePointerText::", beforePointerText, cursorAt)
+      // console.log("beforePointerText::", beforePointerText, cursorAt)
       
       const { blocks = [] } = row
       let blockTexts = ""
@@ -189,7 +190,7 @@ export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = [
   const underline = 'underline'
   const strikethrough = 'strikethrough'
   
-  let styles = [...currentStyles]
+  let styles = _.uniq(currentStyles)
 
   console.tron.display({
     name: 'mergeNewStyles',
@@ -213,6 +214,8 @@ export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = [
   }
 
   styles = [...styles, ...newStyles]
+
+  // styles = _.uniq(currentStyles)
 
   return styles
 }

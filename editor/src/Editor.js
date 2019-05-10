@@ -1,8 +1,6 @@
 import React from 'react';
 import _ from 'lodash';
-import { Text, View, TextInput, FlatList, Keyboard, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
-
-// import Markdown from 'react-native-easy-markdown';
+import { Text, View, ActivityIndicator, TextInput, FlatList, Keyboard } from 'react-native';
 
 import { ActionSheet } from "native-base";
 
@@ -19,23 +17,13 @@ import {
 
 import { convertToMarkdown, convertToRaw, convertFromRaw } from "./Converters";
 
-
 import getEmitter from "./EventEmitter";
 import EVENTS from "./Events";
 
 import styles from "./Styles";
 import StyledText from "./StyledText";
 
-const ROW_TYPES = {
-  TEXT: 'text',
-  HEADING1: 'heading1',
-  HEADING2: 'heading2',
-  HEADING3: 'heading3',
-  BLOCKQUOTE: 'blockquote',
-  BULLETS: 'bullets',
-  NUMBERS: 'numbers',
-  NUMBERS: 'numbers',
-}
+import { ROW_TYPES } from "./Constants";
 
 const eventEmitter = getEmitter()
 
@@ -51,6 +39,7 @@ class Editor extends React.Component {
   lastBlock = {}
 
   state = {
+    isReady: false,
     blocks: [],
     extraData: null,
     activeRowIndex: 0,
@@ -58,9 +47,9 @@ class Editor extends React.Component {
     activeStyles: [],
   }
 
-  componentWillMount() {
-    this.initialize()
-  }
+  // componentWillMount() {
+  //   this.initialize()
+  // }
 
   componentDidMount() {
     listeners.hideKeyboard = eventEmitter.addListener(EVENTS.HIDE_KEYBOARD, this.hideKeyboard)
@@ -92,6 +81,8 @@ class Editor extends React.Component {
     // setTimeout(() => {
     //   convertToRaw(this.state.blocks)
     // }, 1000);
+
+    this.initialize()
   }
 
   // componentDidUpdate(prevProps, prevState, snapshot) {
@@ -105,8 +96,12 @@ class Editor extends React.Component {
 
 
   initialize () {
-    const blocks = convertFromRaw({ contentState })
-    this.setState({ blocks })
+    // const blocks = convertFromRaw({ contentState })
+    const { data = {} } = this.props // convertFromRaw({ contentState })
+    
+    const blocks = convertFromRaw({ contentState: data })
+    this.setState({ blocks, isReady: true })
+
     // console.log(data)
     // this.insertRow()
 
@@ -142,6 +137,7 @@ class Editor extends React.Component {
     } else {
       blocks[0] = { id: generateId(), type: ROW_TYPES.TEXT, extraData: Date.now() }
       this.setState({ blocks, extraData: Date.now() }, () => {
+        this.emitOnChange()
         setTimeout(() => {
           this.focusRow({ index: 0 })
         });
@@ -283,7 +279,9 @@ class Editor extends React.Component {
       const data = attachStylesToSelected({ selection, row: activeRow, newStyles: newActiveStyles, oldStyles })
       activeRow.blocks = data.blocks
       blocks[activeRowIndex] = activeRow
-      this.setState({ blocks, extraData: Date.now() })
+      this.setState({ blocks, extraData: Date.now() }, () => {
+        this.emitOnChange()
+      })
 
       // console.tron.display({
       //   name: 'attachStylesToSelected',
@@ -335,6 +333,7 @@ class Editor extends React.Component {
         blocks[activeRowIndex] = prevBlock
         this.setState({ blocks, extraData: Date.now() }, () => {
           this.focusRow({ index: activeRowIndex-1 })
+          this.emitOnChange()
         })
       }
     }
@@ -346,6 +345,7 @@ class Editor extends React.Component {
         blocks[activeRowIndex] = nextBlock
         this.focusRow({ index: activeRowIndex+1 })
         this.setState({ blocks, extraData: Date.now() }, () => {
+          this.emitOnChange()
           setTimeout(() => {
             this.focusRow({ index: activeRowIndex+1 })
           }, 100);
@@ -487,7 +487,9 @@ class Editor extends React.Component {
 
         newCharBlocks.push(prevBlock)
         newCharBlocks.push(newBlock)
-        newCharBlocks.push(nextBlock)
+        if(blockNextText) {
+          newCharBlocks.push(nextBlock)
+        }
         
         newBlocks = [...p1, ...newCharBlocks, ...p2]
 
@@ -515,6 +517,8 @@ class Editor extends React.Component {
 
       this.setState({ blocks: rows })
     }
+
+    this.emitOnChange()
   }
 
   onSelectionChange = ({ item, index }) => (event) => {
@@ -544,7 +548,7 @@ class Editor extends React.Component {
     }
   }
   
-  onFocus = ({ item, index }) => () => {
+  onFocus = ({ item, index }) => (e) => {
     this.setState({ activeRowIndex: index  })
     this.checkRowTypeChanged()
   }
@@ -600,6 +604,7 @@ class Editor extends React.Component {
 
     this.setState({ blocks, extraData: Date.now(), activeStyles: [] }, () => {
       this.emitActiveStyles()
+      this.emitOnChange()
       setTimeout(() => {
         if(focus) {
           this.focusRow({ index: newBlockIndex })
@@ -623,6 +628,7 @@ class Editor extends React.Component {
     if(blocks.length > 1) {
       blocks.splice(index, 1)
       this.setState({ blocks, extraData: Date.now() }, () => {
+        this.emitOnChange()
         setTimeout(() => {
           if(focusPrev) {
             this.focusRow({ index: index-1 })
@@ -632,6 +638,13 @@ class Editor extends React.Component {
           }
         });
       })
+    }
+  }
+
+  emitOnChange = () => {
+    const { onChange } = this.props
+    if(onChange) {
+      onChange(convertToRaw({ rows: this.state.blocks }))
     }
   }
 
@@ -646,7 +659,9 @@ class Editor extends React.Component {
         block.blocks = block.blocks.map(item => ({ text: item.text }))
       }
       blocks[index] = block
-      this.setState({ blocks, extraData: Date.now() })
+      this.setState({ blocks, extraData: Date.now() }, () => {
+        this.emitOnChange()
+      })
       this.checkRowTypeChanged()
       this.focusRow({ index, timeout: 100 })
     }
@@ -764,12 +779,23 @@ class Editor extends React.Component {
     )
   }
 
+  renderLoading = () => {
+    return (
+      <View>
+        <ActivityIndicator size="small" />
+      </View>
+    )
+  }
+
   render() {
-    const { blocks, extraData } = this.state
+    const { blocks, extraData, isReady } = this.state
 
     // console.log(JSON.stringify(this.state.blocks))
-
     // console.log("blocks", blocks)
+
+    if(!isReady) {
+      return this.renderLoading()
+    }
 
     return (
       <FlatList

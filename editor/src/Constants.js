@@ -1,4 +1,4 @@
-export const BLOCK_TYPES = {
+export const ROW_TYPES = {
   TEXT: 'text',
   HEADING1: 'heading1',
   HEADING2: 'heading2',
