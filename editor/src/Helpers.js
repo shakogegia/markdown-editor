@@ -143,8 +143,6 @@ export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
           pointerAt = actual
 
           // console.log(blockTexts.length - beforePointerText.length, block.text.length - afterBlockLength);
-          
-
           // console.log("pointerAt::", blockTexts.length - beforePointerText.length, "--At", pointerAt)
 
           // this.emitActiveStyles({ activeStyles: blockStyles })
@@ -165,7 +163,6 @@ export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
               ["block.text.length"]: block.text.length
             },
           })
-
           break;
         }
       }
@@ -185,10 +182,6 @@ export const getSelectedBlocks = ({ selection, row }) => {
 export const splitString = (value = '', index) => [value.substring(0, index) , value.substring(index)]
 
 export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = []) => {
-  const bold = 'bold'
-  const italic = 'italic'
-  const underline = 'underline'
-  const strikethrough = 'strikethrough'
   
   let styles = _.uniq(currentStyles)
 
@@ -197,20 +190,28 @@ export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = [
     value: { currentStyles, newStyles, oldStyles },
   })
 
-  if(oldStyles.includes(bold) && !newStyles.includes(bold)) {
-    styles = styles.filter(i => i !== bold)
+  if(oldStyles.includes(STYLE_TYPES.BOLD) && !newStyles.includes(STYLE_TYPES.BOLD)) {
+    styles = styles.filter(i => i !== STYLE_TYPES.BOLD)
   }
 
-  if(oldStyles.includes(italic) && !newStyles.includes(italic)) {
-    styles = styles.filter(i => i !== italic)
+  if(oldStyles.includes(STYLE_TYPES.ITALIC) && !newStyles.includes(STYLE_TYPES.ITALIC)) {
+    styles = styles.filter(i => i !== STYLE_TYPES.ITALIC)
   }
 
-  if(oldStyles.includes(underline) && !newStyles.includes(underline)) {
-    styles = styles.filter(i => i !== underline)
+  if(oldStyles.includes(STYLE_TYPES.UNDERLINE) && !newStyles.includes(STYLE_TYPES.UNDERLINE)) {
+    styles = styles.filter(i => i !== STYLE_TYPES.UNDERLINE)
   }
 
-  if(oldStyles.includes(strikethrough) && !newStyles.includes(strikethrough)) {
-    styles = styles.filter(i => i !== strikethrough)
+  if(oldStyles.includes(STYLE_TYPES.STRIKETHROUGH) && !newStyles.includes(STYLE_TYPES.STRIKETHROUGH)) {
+    styles = styles.filter(i => i !== STYLE_TYPES.STRIKETHROUGH)
+  }
+
+  if(oldStyles.includes(STYLE_TYPES.CODE) && !newStyles.includes(STYLE_TYPES.CODE)) {
+    styles = styles.filter(i => i !== STYLE_TYPES.CODE)
+  }
+
+  if(oldStyles.includes(STYLE_TYPES.LINK) && !newStyles.includes(STYLE_TYPES.LINK)) {
+    styles = styles.filter(i => i !== STYLE_TYPES.LINK)
   }
 
   styles = [...styles, ...newStyles]

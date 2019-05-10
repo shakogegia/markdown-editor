@@ -37,9 +37,21 @@ const styles = StyleSheet.create({
   underline: {
     textDecorationLine: 'underline'
   },
+  link: {
+    textDecorationLine: 'underline',
+    color: '#2196f3',
+  },
   strikethrough: {
     textDecorationLine: 'line-through',
     color: 'gray',
+  },
+  code: {
+    backgroundColor: '#e3e3e3',
+    fontWeight: 'bold',
+    color: 'red',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 2
   },
   heading1: {
     fontSize: 25,

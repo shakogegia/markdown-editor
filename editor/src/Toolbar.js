@@ -20,11 +20,13 @@ const Button = ({ icon, name, isActive = false, isDisabled = false, arrow = fals
 
   const activeButtonStyle = isActive ? styles.activeButton : {}
   const disabledButtonStyle = isDisabled ? styles.disabledButton : {}
+
+  const textStyles = hasIcon && hasName ? styles.iconText : {}
   
   return (
   <TouchableOpacity style={[styles.button, activeButtonStyle, disabledButtonStyle]} disabled={isDisabled} onPress={() => onPress()}>
     {hasIcon && <MaterialIcons name={icon} color="black" size={20} />}
-    {hasName && <Text>{name}</Text>}
+    {hasName && <Text style={[ textStyles ]}>{name}</Text>}
     {arrow && <MaterialIcons name={"keyboard-arrow-down"} color="#e3e3e3" size={16} />}
   </TouchableOpacity>
 )}
@@ -69,11 +71,15 @@ class Toolbar extends React.Component {
     const isActiveItalic = activeStyles.includes('italic')
     const isActiveUnderline = activeStyles.includes('underline')
     const isActiveStrikeThrough = activeStyles.includes('strikethrough')
+    const isActiveCode = activeStyles.includes('code')
+    const isActiveLink = activeStyles.includes('link')
 
     const isDisabledBold = activeRowType.includes('heading')
     const isDisabledItalic = activeRowType.includes('heading')
     const isDisabledUnderline = activeRowType.includes('heading')
     const isDisabledStrikeThrough = activeRowType.includes('heading')
+    const isDisabledCode = activeRowType.includes('code')
+    const isDisabledLink = activeRowType.includes('link')
 
     return (
       <View style={styles.toolbar}>
@@ -92,16 +98,18 @@ class Toolbar extends React.Component {
           <Divider />
 
           <Button icon="format-bold" isActive={isActiveBold} isDisabled={isDisabledBold} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'bold'})} />
-          <Button icon="format-italic" isActive={isActiveItalic} isDisabled={isDisabledItalic} o onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'italic'})} />
-          <Button icon="format-underlined" isActive={isActiveUnderline} isDisabled={isDisabledUnderline} o onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'underline'})} />
-          <Button icon="strikethrough-s" isActive={isActiveStrikeThrough} isDisabled={isDisabledStrikeThrough} o onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'strikethrough'})} />
+          <Button icon="format-italic" isActive={isActiveItalic} isDisabled={isDisabledItalic} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'italic'})} />
+          <Button icon="format-underlined" isActive={isActiveUnderline} isDisabled={isDisabledUnderline} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'underline'})} />
+          <Button icon="strikethrough-s" isActive={isActiveStrikeThrough} isDisabled={isDisabledStrikeThrough} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'strikethrough'})} />
           <Divider />
 
 
+          <Button icon="code" name="Code" isActive={isActiveCode} isDisabled={isDisabledCode} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'code'})} />
           {/*
-            <Button name="Code" />
-            <Button name="Link" />
+            <Button icon="link" name="Link" isActive={isActiveLink} isDisabled={isDisabledLink} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'link'})} />
           */}
+          <Divider />
+          
           <Button name="Duplicate" onPress={this.emit(EVENTS.DUPLICATE_ROW)} />
           <Divider />
 
@@ -174,6 +182,9 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5
+  },
+  iconText: {
+    marginLeft: 5
   }
 })
 

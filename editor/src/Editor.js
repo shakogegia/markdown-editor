@@ -447,7 +447,15 @@ class Editor extends React.Component {
       }
     } else if (keyValue === 'Enter') {
       this.setState({ selection: { start: 1, end: 1 } })
+    } else if (keyValue === 'Tab') {
+      // this.setState({ selection: { start: 1, end: 1 } })
     } else {
+      
+      if (selection.start < selection.end) {
+        const newRowBlocks = removeSelectedText({ selection, row }) 
+        row.blocks = newRowBlocks
+      }
+
       const currentBlock = getCurrentBlockInRow({ selection, row })
 
       const { text: blockText = '',  styles: currentStyles = [] } = currentBlock.block || {}
@@ -483,7 +491,9 @@ class Editor extends React.Component {
         const newBlock = { text: keyValue, styles: activeStyles }
         const nextBlock = { text: blockNextText, styles: currentStyles }
 
-        newCharBlocks.push(prevBlock)
+        if(blockPrevText) {
+          newCharBlocks.push(prevBlock)
+        }
         newCharBlocks.push(newBlock)
         if(blockNextText) {
           newCharBlocks.push(nextBlock)
@@ -572,9 +582,15 @@ class Editor extends React.Component {
   }
 
   focusRow ({ index, timeout = 0 }) {
+    const { blocks, activeStyles } = this.state
     const input = this.textInputRefs[index]
     if(input) {
-      this.setState({ activeRowIndex: index })
+      const row = blocks[index]
+      let newStyles = activeStyles
+      if(!row.value) {
+        newStyles = []
+      }
+      this.setState({ activeRowIndex: index, activeStyles: newStyles })
       setTimeout(() => { input.focus() }, timeout);
       this.checkRowTypeChanged()
     }

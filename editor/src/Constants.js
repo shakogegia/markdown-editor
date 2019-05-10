@@ -13,4 +13,6 @@ export const STYLE_TYPES = {
   ITALIC: 'italic',
   UNDERLINE: 'underline',
   STRIKETHROUGH: 'strikethrough',
+  CODE: 'code',
+  LINK: 'link',
 }
