@@ -14,6 +14,7 @@ import {
   removeSelectedText,
   insertAt,
   attachStylesToSelected,
+  mergeNewStyles
 } from "./Helpers";
 
 import getEmitter from "./EventEmitter";
@@ -92,30 +93,30 @@ class Editor extends React.Component {
 
 
   initialize () {
-    // const blocks = convertFromRaw()
-    // this.setState({ blocks })
+    const blocks = convertFromRaw()
+    this.setState({ blocks })
     // console.log(data)
     // this.insertRow()
 
     
-    const blocks = [{
-      id: generateId(),
-      type: ROW_TYPES.TEXT,
-      value: "I have an array with a list of objects.",
-      blocks: [
-        { text: "I " },
-        { text: "have " },
-        { text: "an " },
-        { text: "array " },
-        { text: "with " },
-        { text: "a " },
-        { text: "list " },
-        { text: "of " },
-        { text: "objects." },
-      ]
-    }]
+    // const blocks = [{
+    //   id: generateId(),
+    //   type: ROW_TYPES.TEXT,
+    //   value: "I have an array with a list of objects.",
+    //   blocks: [
+    //     { text: "I " },
+    //     { text: "have " },
+    //     { text: "an " },
+    //     { text: "array " },
+    //     { text: "with " },
+    //     { text: "a " },
+    //     { text: "list " },
+    //     { text: "of " },
+    //     { text: "objects." },
+    //   ]
+    // }]
 
-    this.setState({ blocks })
+    // this.setState({ blocks })
   }
 
   hideKeyboard () {
@@ -240,6 +241,7 @@ class Editor extends React.Component {
     const activeRow = blocks[activeRowIndex]
     style = style.toLowerCase()
     const isActive = activeStyles.includes(style)
+    const oldStyles = activeStyles
 
     let newActiveStyles = []
 
@@ -267,7 +269,7 @@ class Editor extends React.Component {
       // console.log("Selected::", before, text, after)
       // console.log(blocks)
       
-      const data = attachStylesToSelected({ selection, row: activeRow, newStyles: newActiveStyles })
+      const data = attachStylesToSelected({ selection, row: activeRow, newStyles: newActiveStyles, oldStyles })
       activeRow.blocks = data.blocks
       blocks[activeRowIndex] = activeRow
       this.setState({ blocks, extraData: Date.now() })
@@ -696,6 +698,14 @@ class Editor extends React.Component {
 
     const { blocks = [] } = row
 
+    let selectionProp = {}
+
+    if(selection.start < selection.end) {
+      // selectionProp = {
+      //   selection: selection
+      // }
+    }
+
     return (
       <View style={styles.row}>
         {isBullet && <Text style={styles.bullet}>•</Text>}
@@ -705,7 +715,7 @@ class Editor extends React.Component {
           ref={(input) => { this.textInputRefs[index] = input; }}
           placeholder={placeholder}
           onSubmitEditing={this.onSubmitEditing({ item: row, index })}
-          blurOnSubmit={false}
+          blurOnSubmit={true}
           onChangeText={this.onChangeText({ item: row, index })}
           onKeyPress={this.handleKeyPress({ row, index })}
           style={[styles.textInput, inputStyles]}
@@ -718,6 +728,7 @@ class Editor extends React.Component {
           returnKeyType="default"
           multiline={!false}
           scrollEnabled={false}
+          {...selectionProp}
         >
           {blocks.map((block, i) => (
             <StyledText

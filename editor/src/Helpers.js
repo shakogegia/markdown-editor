@@ -61,7 +61,6 @@ const parseRow = block => {
     const b = styleOffsets[index+1]
     if(b) {
       const item = {
-        // text: text.substring(a, b),
         styles: []
       }
 
@@ -71,9 +70,8 @@ const parseRow = block => {
 
         if(start >= a && b <= end ) {
           item.text = text.substring(a, b)
-          item.range = [a, b]
           if(inlineStyleRange.style) {
-            item.styles.push(inlineStyleRange.style)
+            item.styles.push(inlineStyleRange.style.toLowerCase())
           }
         }
       })
@@ -109,7 +107,7 @@ export const convertFromRaw = () => {
   return result
 }
 
-export const convertToRaw = (data) => {
+export const convertToRaw = (rows) => {
   const result = { blocks: [], entityMap: {} }
 
   const sample = {
@@ -122,18 +120,28 @@ export const convertToRaw = (data) => {
     data: {},
   }
 
-  data.forEach(item => {
+  rows.forEach(row => {
     // console.log(item)
     // const { row, text, type } = parseRow(item)
     // result.push({ id: generateId(), type, value: text, blocks: row })
 
-    const row = {
+    const item = {
       ...sample,
       key: generateId(),
       text: item.value,
+      inlineStyleRanges: []
     }
 
-    result.blocks.push(row)
+    // row.inlineStyleRanges = row.blocks.map(block => {
+    //   const inlineStyleRange = {} // {"offset":16,"length":4,"style":"BOLD"}
+    //   block.styles.forEach(style => {
+
+    //   })
+    //   // 
+    //   return inlineStyleRange
+    // })
+
+    result.blocks.push(item)
   })
 
   // console.log(JSON.stringify(result))
@@ -237,7 +245,41 @@ export const getSelectedBlocks = ({ selection, row }) => {
 
 export const splitString = (value = '', index) => [value.substring(0, index) , value.substring(index)]
 
-export const attachStylesToSelected = ({ selection, row, newStyles }) => {
+export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = []) => {
+  const bold = 'bold'
+  const italic = 'italic'
+  const underline = 'underline'
+  const strikethrough = 'strikethrough'
+  
+  let styles = [...currentStyles]
+
+  console.tron.display({
+    name: 'mergeNewStyles',
+    value: { currentStyles, newStyles, oldStyles },
+  })
+
+  if(oldStyles.includes(bold) && !newStyles.includes(bold)) {
+    styles = styles.filter(i => i !== bold)
+  }
+
+  if(oldStyles.includes(italic) && !newStyles.includes(italic)) {
+    styles = styles.filter(i => i !== italic)
+  }
+
+  if(oldStyles.includes(underline) && !newStyles.includes(underline)) {
+    styles = styles.filter(i => i !== underline)
+  }
+
+  if(oldStyles.includes(strikethrough) && !newStyles.includes(strikethrough)) {
+    styles = styles.filter(i => i !== strikethrough)
+  }
+
+  styles = [...styles, ...newStyles]
+
+  return styles
+}
+
+export const attachStylesToSelected = ({ selection, row, newStyles, oldStyles }) => {
   const { startBlock, endBlock } = getSelectedBlocks({ selection, row })
 
   const { blocks } = row
@@ -263,7 +305,7 @@ export const attachStylesToSelected = ({ selection, row, newStyles }) => {
         const { styles: currentStyles = [] } = block
         
         const prevBlock = { text: blockPrevText, styles: currentStyles }
-        const newBlock = { text: blockSelectedText, styles: [ ...currentStyles, ...newStyles ] }
+        const newBlock = { text: blockSelectedText, styles: mergeNewStyles(currentStyles, newStyles, oldStyles) }
         const nextBlock = { text: blockNextText, styles: currentStyles }
 
         newBlocks.push(prevBlock)
@@ -274,21 +316,21 @@ export const attachStylesToSelected = ({ selection, row, newStyles }) => {
         textParts = splitString(text, startBlock.pointerAt)
         const { styles: currentStyles = [] } = block
         const prevBlock = { text: textParts[0], styles: currentStyles }
-        const newBlock = { text: textParts[1], styles: [ ...currentStyles, ...newStyles ] }
+        const newBlock = { text: textParts[1], styles: mergeNewStyles(currentStyles, newStyles, oldStyles) }
         newBlocks.push(prevBlock)
         newBlocks.push(newBlock)
       } else if (i === endBlock.blockIndex) {
         blockText = text.substring(0, endBlock.pointerAt)
         textParts = splitString(text, endBlock.pointerAt)
         const { styles: currentStyles = [] } = block
-        const newBlock = { text: textParts[0], styles: [ ...currentStyles, ...newStyles ] }
+        const newBlock = { text: textParts[0], styles: mergeNewStyles(currentStyles, newStyles, oldStyles) }
         const nextBlock = { text: textParts[1], styles: currentStyles }
         newBlocks.push(newBlock)
         newBlocks.push(nextBlock)
       } else {
         blockText = text
         const { styles: currentStyles = [] } = block
-        const newBlock = { text: text, styles: [ ...currentStyles, ...newStyles ] }
+        const newBlock = { text: text, styles: mergeNewStyles(currentStyles, newStyles, oldStyles) }
         newBlocks.push(newBlock)
       }
 
