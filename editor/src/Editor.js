@@ -2,20 +2,23 @@ import React from 'react';
 import _ from 'lodash';
 import { Text, View, TextInput, FlatList, Keyboard, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 
-import Markdown from 'react-native-easy-markdown';
+// import Markdown from 'react-native-easy-markdown';
 
 import { ActionSheet } from "native-base";
 
 import {
   generateId,
-  convertFromRaw,
-  convertToRaw,
   getCurrentBlockInRow,
   removeSelectedText,
   insertAt,
   attachStylesToSelected,
-  mergeNewStyles
+  mergeNewStyles,
+
+  contentState,
 } from "./Helpers";
+
+import { convertToMarkdown, convertToRaw, convertFromRaw } from "./Converters";
+
 
 import getEmitter from "./EventEmitter";
 import EVENTS from "./Events";
@@ -76,6 +79,15 @@ class Editor extends React.Component {
         value: { props: this.state },
       })
     })
+    
+    listeners.duplicateRow = eventEmitter.addListener(EVENTS.CONVERT_TO_RAW, () => {
+      const data = convertToRaw({ rows: this.state.blocks })
+      const markdown = convertToMarkdown({ rows: this.state.blocks })
+      console.tron.display({
+        name: 'convertToRaw',
+        value: { data, markdown },
+      })
+    })
 
     // setTimeout(() => {
     //   convertToRaw(this.state.blocks)
@@ -93,7 +105,7 @@ class Editor extends React.Component {
 
 
   initialize () {
-    const blocks = convertFromRaw()
+    const blocks = convertFromRaw({ contentState })
     this.setState({ blocks })
     // console.log(data)
     // this.insertRow()
@@ -258,7 +270,6 @@ class Editor extends React.Component {
 
     
     if(activeRowIndex !== null && selection.start < selection.end && selection.id === activeRow.id) {
-
       console.log("Changing block styles")
 
       // const before = activeRow.value.substring(0, selection.start)
@@ -435,9 +446,14 @@ class Editor extends React.Component {
         this.setState({ blocks: rows })
       }
     } else if (keyValue === 'Enter') {
-
+      this.setState({ selection: { start: 1, end: 1 } })
     } else {
       const currentBlock = getCurrentBlockInRow({ selection, row })
+
+      console.tron.display({
+        name: 'currentBlock',
+        value: { props: currentBlock },
+      })
       
       const { blocks = [] } = row
 
@@ -533,7 +549,7 @@ class Editor extends React.Component {
     this.checkRowTypeChanged()
   }
   
-  onBlur = ({ item, index }) => () => {
+  onBlur = ({ item, index }) => (e) => {
     this.setState({ activeRowIndex: null  })
   }
 
@@ -544,11 +560,11 @@ class Editor extends React.Component {
     getEmitter().emit(EVENTS.ROW_TYPE_CHANGED, { type })
   }
 
-  focusRow ({ index }) {
+  focusRow ({ index, timeout = 0 }) {
     const input = this.textInputRefs[index]
     if(input) {
       this.setState({ activeRowIndex: index })
-      input.focus()
+      setTimeout(() => { input.focus() }, timeout);
       this.checkRowTypeChanged()
     }
   }
@@ -625,9 +641,14 @@ class Editor extends React.Component {
     if(block) {
       block.type = type
       block.extraData = Date.now()
+      // If its heading row, remove styles
+      if(type.includes('heading')) {
+        block.blocks = block.blocks.map(item => ({ text: item.text }))
+      }
       blocks[index] = block
       this.setState({ blocks, extraData: Date.now() })
       this.checkRowTypeChanged()
+      this.focusRow({ index, timeout: 100 })
     }
   }
 

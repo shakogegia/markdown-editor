@@ -23,12 +23,18 @@ export default class App extends React.Component {
     eventEmitter.emit(EVENTS.LOG_STATE)
   }
 
+  convert () {
+    eventEmitter.emit(EVENTS.CONVERT_TO_RAW)
+  }
+
   render() {
     return (
       <Container>
         <Header>
           <Left>
-            <Text></Text>
+            <TouchableOpacity onPress={this.convert}>
+              <Text>Convert</Text>
+            </TouchableOpacity>
           </Left>
           <Body>
             <Title>Text Editor</Title>
