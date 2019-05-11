@@ -118,15 +118,20 @@ class Toolbar extends React.Component {
           <Button name="Duplicate" onPress={this.emit(EVENTS.DUPLICATE_ROW)} />
           <Divider />
 
+          {/*
+          */}
+          <Button icon="format-indent-increase" onPress={this.emit(EVENTS.CHANGE_BLOCK_INDENT, { direction: 'increase' })} />
+          <Button icon="format-indent-decrease" onPress={this.emit(EVENTS.CHANGE_BLOCK_INDENT, { direction: 'decrease' })} />
+          <Divider />
+
           <Button icon="vertical-align-top" onPress={this.emit(EVENTS.CHANGE_BLOCK_INDEX, { direction: 'up' })} />
           <Button icon="vertical-align-bottom" onPress={this.emit(EVENTS.CHANGE_BLOCK_INDEX, { direction: 'down' })} />
           <Divider />
 
-          {/*
-          */}
-            <Button icon="format-indent-increase" onPress={this.emit(EVENTS.CHANGE_BLOCK_INDENT, { direction: 'increase' })} />
-            <Button icon="format-indent-decrease" onPress={this.emit(EVENTS.CHANGE_BLOCK_INDENT, { direction: 'decrease' })} />
-            <Divider />
+          <Button icon="undo" onPress={this.emit(EVENTS.BROWSE_HISTORY, { undo: true })} />
+          <Button icon="redo" onPress={this.emit(EVENTS.BROWSE_HISTORY, { redo: true })} />
+          <Divider />
+
 
           <Button icon="delete" onPress={this.emit(EVENTS.DELETE_BLOCK)} />
           <Divider />
@@ -168,7 +173,7 @@ const styles = StyleSheet.create({
     borderColor: '#e3e3e3',
   },
   contentContainerStyle: {
-    paddingRight: 90
+    paddingRight: 120
   },
   divider: {
     height: HEIGHT,
