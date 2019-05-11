@@ -386,30 +386,41 @@ class Editor extends React.Component {
     this.setState({ blocks, extraData: Date.now() })
   }
 
-  handleKeyPress = ({ row, index }) => ({ nativeEvent: { key: keyValue }, ...rest }) => {
+  handleBackspace = ({ row: item, index }) => {
+    const { selection, blocks: rows } = this.state
+    let row = Object.assign({}, item)
+    const { value = '', blocks = [] } = row
+
+    if (selection.start < selection.end) {
+      const newBlocks = removeSelectedText({ selection, row }) 
+      row.blocks = newBlocks
+    } else if(!value.length) {
+      this.removeRow({ index, focusPrev: true })
+    } else if(value.length === 1) {
+      this.removeRow({ index, focusPrev: true })
+    } else {
+      const newBlocks = removeSelectedText({ selection, row }) 
+      let newRows = [].concat(rows)
+      newRows[index].blocks = newBlocks
+      this.setState({ blocks: newRows })
+
+      console.tron.display({
+        name: 'Backspace',
+        value: { blocks, newRows },
+      })
+    }
+  }
+
+  handleKeyPress = ({ row: item, index }) => ({ nativeEvent: { key: keyValue }, ...rest }) => {
     const { blocks: rows = [], selection, activeStyles } = this.state
+    let row = Object.assign({}, item)
     const currentRow = rows[index]
-    const { value = '' } = currentRow
     let { blocks = [] } = currentRow
 
     console.log("handleKeyPress fired::", keyValue)
 
     if (keyValue === 'Backspace') {
-      if(!value.length) {
-        this.removeRow({ index, focusPrev: true })
-      } else if(value.length === 1) {
-        this.removeRow({ index, focusPrev: true })
-      } else {
-        blocks = removeSelectedText({ selection, row }) 
-        let newRows = [].concat(rows)
-        newRows[index].blocks = blocks
-        this.setState({ blocks: newRows })
-
-        console.tron.display({
-          name: 'Backspace',
-          value: { blocks, keyValue, newRows },
-        })
-      }
+      this.handleBackspace({ row, index })
     } else if (keyValue === 'Enter') {
       this.setState({ selection: { start: 1, end: 1 } })
     } else if (keyValue === 'Tab') {
