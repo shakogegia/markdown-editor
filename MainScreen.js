@@ -8,17 +8,11 @@ import getEmitter from "./editor/src/EventEmitter";
 import EVENTS from "./editor/src/Events";
 import { contentState } from "./editor/src/Helpers";
 
-import {
-  Editor,
-  Toolbar,
-  Context
-} from "./editor";
-
+import { Editor, Toolbar } from "./editor/index";
 
 const eventEmitter = getEmitter()
 
 export default class App extends React.Component {
-
 
   logState () {
     eventEmitter.emit(EVENTS.LOG_STATE)

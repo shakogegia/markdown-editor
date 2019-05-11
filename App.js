@@ -23,10 +23,6 @@ export default class App extends React.Component {
         
           <MainScreen />
           
-          {/* 
-          <CNScreen />
-          */}
-          
           
         </View>
       </Root>

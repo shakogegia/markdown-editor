@@ -81,99 +81,69 @@ export const parseRawBlock = block => {
     result.push(item)
   }
 
+  if(!inlineStyleRanges.length) {
+    const item = { row: [ { text: text } ], type: getBlockType(type), text: text }
+    result.push(item)
+  }
+
   return { row: result, text, type: getBlockType(type) }
 }
 
 export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
   let rowCursorAt = cursorAt !== null ? cursorAt : selection.start
 
-  if(!row.value || rowCursorAt - row.value.length > 2) {
-    rowCursorAt = 1
-  }
-
   let currentBlock = {}
   let blockIndex = null
   let pointerAt = null
+  let position = null
 
-  // console.log(rowCursorAt, row, selection)
-  // if (selection.start === selection.end) {
-    if(row && ( rowCursorAt === 0 || rowCursorAt === 1 )) {
-      console.log("First block:", rowCursorAt)
-      
-      blockIndex = 0
-      pointerAt = rowCursorAt
-      currentBlock = row[0] || { text: '' }
+  const { blocks = [], value = ''  } = row
+  
+  // Cursor is At the Beginning
+  if(rowCursorAt === 0) {
+    currentBlock = blocks[0] || { text: '' }
+    blockIndex = 0
+    pointerAt = 0
+    position = "start"
+  } else if(rowCursorAt === value.length) { // Cursor is At the End
+    const lastBlockIndex = blocks.length-1
+    currentBlock = blocks[lastBlockIndex] || { text: '' }
+    blockIndex = lastBlockIndex
+    pointerAt = (currentBlock.text || '').length
+    position = "end"
+  } else {
+    position = "middle"
+    // Cursor is at middle text
+    const textBeforePointer = value.substring(0, rowCursorAt)
+    
+    let blockTexts = ""
 
-    } else if (row) {
-      const beforePointerText = (row.value || '').substring(0, rowCursorAt)
-      
-      // console.log("beforePointerText::", beforePointerText, cursorAt)
-      
-      const { blocks = [] } = row
-      let blockTexts = ""
+    for (let i = 0; i < blocks.length; i++) {
+      const block = blocks[i] || {};
 
+      const { text: blockText = '', styles: blockStyles = [] } = block
+      blockTexts += blockText
 
-      for (let i = 0; i < blocks.length; i++) {
-        const block = blocks[i];
+      if(blockTexts.length >= textBeforePointer.length) {
+        
+        currentBlock = block
+        blockIndex = i
 
-        blockTexts += block.text
-
-        // How are yo|u man?
-        // [How ][are ][yo|u ][man?]
-        // Block: 3, i: 2, index: 10
-
-        if(blockTexts.length >= beforePointerText.length) {
-          const blockStyles = block.styles || []
-          
-          currentBlock = block
-          blockIndex = i
-          // pointerAt = blockTexts.length - beforePointerText.length
-
-          // if(pointerAt > rowCursorAt) {
-          //   pointerAt = rowCursorAt
-          // }
-
-          const afterBlockLength = blockTexts.length - beforePointerText.length
-          
-          const actual = block.text.length - afterBlockLength // > pointerAt
-            // ? block.text.length - afterBlockLength - pointerAt
-            // : block.text.length - afterBlockLength
-          
-          // pointerAt = block.text.length - afterBlockLength
-          pointerAt = actual
-
-          // console.log(blockTexts.length - beforePointerText.length, block.text.length - afterBlockLength);
-          // console.log("pointerAt::", blockTexts.length - beforePointerText.length, "--At", pointerAt)
-
-          // this.emitActiveStyles({ activeStyles: blockStyles })
-          // console.log("Active block::", i)
-          // console.log("Active block::", i, "blockTexts::", "[",blockTexts,"]", "beforePointerText::", "[",beforePointerText,"]", "pointerAt::", pointerAt, "selection.start::", selection.start)
-
-          console.tron.display({
-            name: 'getCurrentBlockInRow',
-            value: { 
-              ["Active block::"]: i,
-              ["blockTexts::"]: blockTexts,
-              ["beforePointerText::"]: beforePointerText,
-              ["pointerAt::"]: pointerAt,
-              ["actual::"]: actual,
-              ["selection::"]: selection,
-              ["length-1"]: blockTexts.length - beforePointerText.length,
-              afterBlockLength: afterBlockLength,
-              ["block.text.length"]: block.text.length
-            },
-          })
-          break;
-        }
+        // const textLengthAfterPointerInBlock = blockTexts.length - textBeforePointer.length
+        const textLengthAfterPointerInBlock = blockTexts.substring(textBeforePointer.length, blockTexts.length).length
+        pointerAt = blockText.length - textLengthAfterPointerInBlock
+        break;
       }
     }
-  // }
+    
+    console.log("Cursor is At middle text::", pointerAt)
+  }
 
-  return { block: currentBlock, blockIndex, pointerAt }
+  return { block: currentBlock, blockIndex, pointerAt, position }
 }
 
 export const getSelectedBlocks = ({ selection, row }) => {
-  const { start = 0, end } = selection
+  const { start = 0, end = 0 } = selection
   const startBlock = getCurrentBlockInRow({ row, cursorAt: start })
   const endBlock = getCurrentBlockInRow({ row, cursorAt: end })
   return { startBlock, endBlock }
@@ -183,7 +153,7 @@ export const splitString = (value = '', index) => [value.substring(0, index) , v
 
 export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = []) => {
   
-  let styles = _.uniq(currentStyles)
+  let styles = currentStyles // _.uniq(currentStyles)
 
   console.tron.display({
     name: 'mergeNewStyles',
@@ -216,7 +186,7 @@ export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = [
 
   styles = [...styles, ...newStyles]
 
-  // styles = _.uniq(currentStyles)
+  styles = _.uniq(styles)
 
   return styles
 }

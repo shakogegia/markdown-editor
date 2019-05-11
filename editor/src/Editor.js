@@ -11,8 +11,8 @@ import {
   insertAt,
   attachStylesToSelected,
   mergeNewStyles,
-
   contentState,
+  getSelectedBlocks
 } from "./Helpers";
 
 import { convertToMarkdown, convertToRaw, convertFromRaw } from "./Converters";
@@ -47,10 +47,6 @@ class Editor extends React.Component {
     activeStyles: [],
   }
 
-  // componentWillMount() {
-  //   this.initialize()
-  // }
-
   componentDidMount() {
     listeners.hideKeyboard = eventEmitter.addListener(EVENTS.HIDE_KEYBOARD, this.hideKeyboard)
     listeners.showInsertRow = eventEmitter.addListener(EVENTS.SHOW_INSERT_BLOCK, this.showInsertRow)
@@ -62,7 +58,7 @@ class Editor extends React.Component {
     listeners.duplicateRow = eventEmitter.addListener(EVENTS.DUPLICATE_ROW, this.duplicateRow)
     
     
-    listeners.duplicateRow = eventEmitter.addListener(EVENTS.LOG_STATE, () => {
+    listeners.logState = eventEmitter.addListener(EVENTS.LOG_STATE, () => {
       console.tron.display({
         name: 'STATE',
         value: { props: this.state },
@@ -78,20 +74,26 @@ class Editor extends React.Component {
       })
     })
 
-    // setTimeout(() => {
-    //   convertToRaw(this.state.blocks)
-    // }, 1000);
-
     this.initialize()
   }
 
   // componentDidUpdate(prevProps, prevState, snapshot) {
+  //   const { blocks: rows } = this.state
+  //   const contentStateChanged = !_.isEqual(prevState.blocks, rows)
+  //   if(contentStateChanged) {
+  //     console.log('contentStateChanged::', contentStateChanged)
+  //   }
   // }
 
   componentWillUnmount() {
-    listeners.forEach(listener => {
-      listener.remove()
-    })
+    if(listeners) {
+      for (const key in listeners) {
+        if (listeners.hasOwnProperty(key)) {
+          const listener = listeners[key];
+          listener.remove()
+        }
+      }
+    }
   }
 
 
@@ -267,31 +269,14 @@ class Editor extends React.Component {
     
     if(activeRowIndex !== null && selection.start < selection.end && selection.id === activeRow.id) {
       console.log("Changing block styles")
-
-      // const before = activeRow.value.substring(0, selection.start)
-      // const text = activeRow.value.substring(selection.start, selection.end)
-      // const after = activeRow.value.substring(selection.end, activeRow.value.length)
-      // activeRow.blocks = [ {text: before}, {text, styles: newActiveStyles} , {text: after}  ]
-      // blocks[activeRowIndex] = activeRow
-      // console.log("Selected::", before, text, after)
-      // console.log(blocks)
-      
       const data = attachStylesToSelected({ selection, row: activeRow, newStyles: newActiveStyles, oldStyles })
       activeRow.blocks = data.blocks
-      blocks[activeRowIndex] = activeRow
-      this.setState({ blocks, extraData: Date.now() }, () => {
+      let newBlocks = [].concat(blocks)
+      newBlocks[activeRowIndex] = activeRow
+      this.setState({ blocks: newBlocks, extraData: Date.now() }, () => {
         this.emitOnChange()
       })
-
-      // console.tron.display({
-      //   name: 'attachStylesToSelected',
-      //   value: { data },
-      // })
-      
-      // this.setState({ blocks, extraData: Date.now(), selection: { start: selection.end, end: selection.end,  } })
-
     } else {
-      // console.log(selection, activeRow.id, activeRowIndex !== null , selection.start < selection.end , selection.id === activeRow.id)
       this.setState({ activeStyles: newActiveStyles })
     }
   }
@@ -380,18 +365,10 @@ class Editor extends React.Component {
   }
 
   onSubmitEditing = ({ item, index }) => () => {
-    const { blocks } = this.state
+    const { blocks: rows } = this.state
 
-    const nextBlock = blocks[index+1]
-    // const prevBlock = blocks[index-1]
-
-    // blocks[index].value = (item.value || '').replace(/\n/g, '')
-    // this.setState({ blocks, extraData: Date.now() })
-
+    const nextBlock = rows[index+1]
     if(!item.value && isListRow(item.type)) {
-      // this.removeRow({ index, focusPrev: false }, () => {
-      //   this.insertRow({ index: index+1, focus: true })
-      // }) 
       this.changeRowType({ index, type: ROW_TYPES.TEXT })
     } else if (nextBlock && isListRow(item.type)) {
       this.insertRow({ focus: true, currentBlock: item, insertAfterActive: true })
@@ -405,30 +382,17 @@ class Editor extends React.Component {
   
   onChangeText = ({ item, index }) => (val) => {
     const { blocks, activeStyles } = this.state
-    if(!val) {
-      // this.removeRow({ index, focusPrev: true })
-    } else {
-      // var lastChar = myString.substr(myString.length -1)
-
-      // const data = getCurrentBlockInRow(this.state)
-      // // console.log(data)
-
-      // const row = item
-      // row.value = val.replace(/\n/g, '')
-      // // row.blocks[data.index] = 
-      // console.log(row.blocks[data.index])
-
-      blocks[index].value = val.replace(/\n/g, '')
-      this.setState({ blocks, extraData: Date.now() })
-    }
+    blocks[index].value = (val || '').replace(/\n/g, '')
+    this.setState({ blocks, extraData: Date.now() })
   }
 
   handleKeyPress = ({ row, index }) => ({ nativeEvent: { key: keyValue }, ...rest }) => {
-    const { blocks: rows, selection, activeStyles } = this.state
+    const { blocks: rows = [], selection, activeStyles } = this.state
     const currentRow = rows[index]
     const { value = '' } = currentRow
+    let { blocks = [] } = currentRow
 
-    console.log("handleKeyPress fired")
+    console.log("handleKeyPress fired::", keyValue)
 
     if (keyValue === 'Backspace') {
       if(!value.length) {
@@ -436,21 +400,23 @@ class Editor extends React.Component {
       } else if(value.length === 1) {
         this.removeRow({ index, focusPrev: true })
       } else {
-        const blocks = removeSelectedText({ selection, row }) 
+        blocks = removeSelectedText({ selection, row }) 
+        let newRows = [].concat(rows)
+        newRows[index].blocks = blocks
+        this.setState({ blocks: newRows })
+
         console.tron.display({
           name: 'Backspace',
-          value: { blocks },
+          value: { blocks, keyValue, newRows },
         })
-
-        rows[index].blocks = blocks
-        this.setState({ blocks: rows })
       }
     } else if (keyValue === 'Enter') {
       this.setState({ selection: { start: 1, end: 1 } })
     } else if (keyValue === 'Tab') {
-      // this.setState({ selection: { start: 1, end: 1 } })
+      // TODO: indent
     } else {
       
+      // If there is selected text, remove first
       if (selection.start < selection.end) {
         const newRowBlocks = removeSelectedText({ selection, row }) 
         row.blocks = newRowBlocks
@@ -458,110 +424,118 @@ class Editor extends React.Component {
 
       const currentBlock = getCurrentBlockInRow({ selection, row })
 
-      const { text: blockText = '',  styles: currentStyles = [] } = currentBlock.block || {}
+      const { 
+        block: {
+            text: blockText = '', 
+            styles: currentStyles = []
+        } = {},
+        blockIndex,
+        pointerAt
+      } = currentBlock
 
       console.tron.display({
         name: 'currentBlock',
         value: { props: currentBlock },
       })
+    
+      const isStylesChanged = !_.isEqual(activeStyles, currentStyles)
       
-      const { blocks = [] } = row
+      let newBlocks = [].concat(blocks)
 
-      // const blockText = blocks[currentBlock.blockIndex] ? blocks[currentBlock.blockIndex].text : ''
-      // const newBlockText = insertAt(blockText, keyValue, currentBlock.pointerAt)
-      // blocks[currentBlock.blockIndex].text = newBlockText
-
-      const stylesChanged = !_.isEqual(activeStyles, currentStyles)
-      
-      let newBlocks = blocks
-
-      if (stylesChanged) {
-
-        let p1 = blocks.slice(0, currentBlock.blockIndex)
-        let p2 = blocks.slice(currentBlock.blockIndex+1)
+      if (isStylesChanged) {
+        let prevBlocks = blocks.slice(0, blockIndex) || []
+        let nextBlocks = blocks.slice(blockIndex+1) || []
         
         const newCharBlocks = []
 
+        console.tron.display({
+          name: 'stylesChanged',
+          value: { currentStyles, activeStyles, currentBlock },
+        })
+
         console.log("stylesChanged..", currentStyles, activeStyles, currentBlock)
 
-        const blockPrevText = blockText.substring(0, currentBlock.pointerAt)
-        const blockNextText = blockText.substring(currentBlock.pointerAt, blockText.length)
-                
-        const prevBlock = { text: blockPrevText, styles: currentStyles }
-        const newBlock = { text: keyValue, styles: activeStyles }
-        const nextBlock = { text: blockNextText, styles: currentStyles }
-
-        if(blockPrevText) {
+        const beforeBlockText = blockText.substring(0, pointerAt)
+        const afterBlockText = blockText.substring(pointerAt, blockText.length)
+        
+        if(beforeBlockText && beforeBlockText.length > 0) {
+          const prevBlock = { text: beforeBlockText, styles: currentStyles }
           newCharBlocks.push(prevBlock)
         }
+
+        const newBlock = { text: keyValue, styles: activeStyles }
         newCharBlocks.push(newBlock)
-        if(blockNextText) {
+  
+        if(afterBlockText && afterBlockText.length > 0) {
+          const nextBlock = { text: afterBlockText, styles: currentStyles }
           newCharBlocks.push(nextBlock)
         }
         
-        newBlocks = [...p1, ...newCharBlocks, ...p2]
-
+        newBlocks = [...prevBlocks, ...newCharBlocks, ...nextBlocks]
         console.tron.display({
           name: 'newCharBlocks',
-          value: { newCharBlocks, p1, p2,  },
+          value: { newCharBlocks, newBlocks },
         })
 
+        // this.emitActiveStyles({ activeStyles: activeStyles, updateState: true })
       } else {
-        const blockText = blocks[currentBlock.blockIndex] ? blocks[currentBlock.blockIndex].text : ''
-        const newBlockText = insertAt(blockText, keyValue, currentBlock.pointerAt)
+        const newBlockText = insertAt(blockText, keyValue, pointerAt)
         
-        if (!newBlocks[currentBlock.blockIndex]) {
-          newBlocks[currentBlock.blockIndex] = {}
+        if (!newBlocks[blockIndex]) {
+          newBlocks[blockIndex] = {}
         }
 
-        newBlocks[currentBlock.blockIndex].text = newBlockText
+        newBlocks[blockIndex].text = newBlockText
+
+        // this.emitActiveStyles({ activeStyles: currentStyles, updateState: true })
       }
 
-      // console.log("Insert::", blockText, keyValue, currentBlock.pointerAt, newBlockText)
-      // console.log(blockText, blockText.substring(0, currentBlock.pointerAt), currentBlock.pointerAt, newBlockText)
-      
-      // blocks[index].blocks = blocks
-      rows[index].blocks = newBlocks
+      let newRows = [].concat(rows)
+      newRows[index].blocks = newBlocks
 
-      this.setState({ blocks: rows })
+      this.setState({ blocks: newRows, extraData: Date.now() })
     }
 
     this.emitOnChange()
   }
 
-  onSelectionChange = ({ item, index }) => (event) => {
+  onSelectionChange = ({ item: row, index }) => (event) => {
     const { selection } = event.nativeEvent
-    const { blocks, activeRowIndex } = this.state
+    const { blocks: rows, activeRowIndex } = this.state
     
-    selection.id = item.id
+    selection.id = row.id
     this.setState({ selection })
     
     if (selection.start === selection.end && activeRowIndex !== null) {
-      const row = blocks[activeRowIndex]
+      const row = rows[activeRowIndex]
       if(row && row.value) {
-        const { block: { styles: blockStyles = [] } = {} } = getCurrentBlockInRow({ selection, row })
-        this.emitActiveStyles({ activeStyles: blockStyles, updateState: true })
-        // break;
+        const { block: { styles: blockStyles = [] } = {}, position } = getCurrentBlockInRow({ selection, row })
+        let activeStyles = blockStyles
 
-        // const beforePointerText = row.value.substring(0, selection.start)
-        // const { blocks = [] } = row
-        // let text = ""
-        // for (let i = 0; i < blocks.length; i++) {
-        //   const block = blocks[i];
-        //   text += block.text
-        //   if(text.length >= beforePointerText.length) {
-        //     const blockStyles = block.styles || []
-
-        //     console.tron.display({
-        //       name: 'onSelectionChange',
-        //       value: { currentBlock, block },
-        //     })
-            
-        //     this.emitActiveStyles({ activeStyles: blockStyles, updateState: true })
-        //     break;
-        //   }
+        // if(position === 'end') {
+        //   const lastBlockIndex = row.blocks.length-1
+        //   lastBlock = row.blocks[lastBlockIndex] || { styles: [] }
+        //   activeStyles = blockStyles.concat(lastBlock.styles || [])
         // }
+
+        this.emitActiveStyles({ activeStyles, updateState: true })
       }
+    } else {
+      const { startBlock, endBlock } = getSelectedBlocks({ selection, row })
+      const { blocks } = row
+
+      const blockStyles = []
+
+      for (let i = startBlock.blockIndex; i <= endBlock.blockIndex; i++) {
+        const block = blocks[i];
+        const { styles = [], text = '' } = block
+        if(text && text !== ' ') {
+          blockStyles.push(styles)
+        }
+      }
+
+      const commonStyles = _.intersection(...blockStyles);
+      this.emitActiveStyles({ activeStyles: commonStyles, updateState: true })
     }
   }
   
@@ -610,7 +584,7 @@ class Editor extends React.Component {
       }
     }
     
-    const newBlock = newBlockData || { id: generateId(), type: newBlockType, extraData: Date.now() }
+    const newBlock = newBlockData || { id: generateId(), type: newBlockType, blocks: [], extraData: Date.now() }
     
     let newBlockIndex
 
@@ -625,7 +599,7 @@ class Editor extends React.Component {
       newBlockIndex = blocks.length - 1
     }
 
-    this.setState({ blocks, extraData: Date.now(), activeStyles: [] }, () => {
+    this.setState({ blocks, extraData: Date.now(), activeStyles: [], selection: { start: 0, end: 0 } }, () => {
       this.emitActiveStyles()
       this.emitOnChange()
       setTimeout(() => {
@@ -691,8 +665,8 @@ class Editor extends React.Component {
   }
 
   getPlaceholder = ({ row, index }) => {
-    const { blocks } = this.state
-    if(index === 0) { //  && blocks.length === 1
+    const { blocks: rows } = this.state
+    if(index === 0 && rows.length === 1) { //  && rows.length === 1
       return "Write..."
     }
     if(row.type === ROW_TYPES.HEADING1) {
@@ -713,7 +687,7 @@ class Editor extends React.Component {
     if(row.type === ROW_TYPES.NUMBERS) {
       return 'List'
     }
-    return 'Placeholder'
+    return ''
   }
   
   getInputStyles = ({ row, index }) => {

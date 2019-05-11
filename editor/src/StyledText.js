@@ -3,6 +3,8 @@ import { Text, StyleSheet } from 'react-native';
 
 const StyledText = ({ text, textStyles = [], type = 'text' }) => {
   let inputStyles = [styles.default]
+
+  // Block Styles
   textStyles.forEach(item => {
     const key = item.toLowerCase()
     if(styles[key]) {
@@ -10,8 +12,13 @@ const StyledText = ({ text, textStyles = [], type = 'text' }) => {
     }
   });
 
+  // Row Styles
   if(styles[type]) {
     inputStyles.push(styles[type])
+  }
+
+  if(text === 'ze') {
+    console.log(text, inputStyles)
   }
 
   return (

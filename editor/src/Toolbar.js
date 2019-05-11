@@ -46,9 +46,14 @@ class Toolbar extends React.Component {
   }
 
   componentWillUnmount() {
-    listeners.forEach(listener => {
-      listener.remove()
-    })
+    if(listeners) {
+      for (const key in listeners) {
+        if (listeners.hasOwnProperty(key)) {
+          const listener = listeners[key];
+          listener.remove()
+        }
+      }
+    }
   }
 
   activeStylesChanged = ({ activeStyles }) => {
@@ -159,7 +164,7 @@ const styles = StyleSheet.create({
     // flex: 1,
     flexDirection: 'row',
     height: HEIGHT,
-    borderWidth: 1/2,
+    borderTopWidth: 1/2,
     borderColor: '#e3e3e3',
   },
   contentContainerStyle: {
