@@ -23,7 +23,6 @@ const StyledText = ({ text, textStyles = [], type = 'text' }) => {
 
   return (
     <Text
-      selectable={false}
       selectionColor={"red"}
       style={inputStyles}
       onPress={() => console.log("tetx") }

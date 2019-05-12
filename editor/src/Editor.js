@@ -306,8 +306,9 @@ class Editor extends React.Component {
   }
 
   emitActiveStyles = ({ activeStyles, updateState = false } = {}) => {
-    activeStyles = activeStyles || this.state.activeStyles
-    getEmitter().emit(EVENTS.ACTIVE_STYLE_CHANGED, { activeStyles })
+    let newActiveStyles = activeStyles || this.state.activeStyles
+    newActiveStyles = _.uniq(newActiveStyles)
+    getEmitter().emit(EVENTS.ACTIVE_STYLE_CHANGED, { activeStyles: newActiveStyles })
 
     if(updateState) {
       this.setState({ activeStyles })
@@ -557,19 +558,26 @@ class Editor extends React.Component {
     
     selection.id = row.id
     this.setState({ selection })
+
+    console.log("onSelectionChange::", selection.start, selection.end, activeRowIndex)
     
     setTimeout(() => {
       if (selection.start === selection.end && activeRowIndex !== null) {
         const row = rows[activeRowIndex]
-        if(row && row.value) {
+        if(row) {
           const { block: { styles: blockStyles = [] } = {}, position } = getCurrentBlockInRow({ selection, row })
           let activeStyles = blockStyles
   
-          // if(position === 'end') {
-          //   const lastBlockIndex = row.blocks.length-1
-          //   lastBlock = row.blocks[lastBlockIndex] || { styles: [] }
-          //   activeStyles = blockStyles.concat(lastBlock.styles || [])
-          // }
+          if(position === 'end') {
+            const lastBlockIndex = row.blocks.length-1
+            lastBlock = row.blocks[lastBlockIndex] || { styles: [] }
+            console.tron.display({
+              name: 'lastBlock',
+              value: { props: lastBlock },
+            })
+            activeStyles = blockStyles.concat(lastBlock.styles || [])
+            activeStyles = _.uniq(activeStyles)
+          }
   
           this.emitActiveStyles({ activeStyles, updateState: true })
         }
@@ -598,7 +606,17 @@ class Editor extends React.Component {
   }
   
   onFocus = ({ item, index }) => (e) => {
-    this.setState({ activeRowIndex: index  })
+    const { blocks: rows } = this.state
+    const focusedRow = rows[index] || { value: '' }    
+
+    this.setState({ activeRowIndex: index }, () => {
+      if(focusedRow.value) {
+        const newSelection = { start: focusedRow.value.length, end: focusedRow.value.length }
+        const event = { nativeEvent: { selection: newSelection } }
+        this.onSelectionChange({ item, index })(event) 
+      }
+    })
+
     this.checkRowTypeChanged()
 
     const { onFocus } = this.props
@@ -608,7 +626,7 @@ class Editor extends React.Component {
   }
   
   onBlur = ({ item, index }) => (e) => {
-    this.setState({ activeRowIndex: null  })
+    // this.setState({ activeRowIndex: null  })
 
     const { onBlur } = this.props
     if(onBlur) {
