@@ -158,6 +158,8 @@ class Toolbar extends React.Component {
           
         </ScrollView>
         <Divider />
+        <Button icon="fullscreen" onPress={this.emit(EVENTS.TOGGLE_FULL_SCREEN)} />
+        <Divider />
         <Button icon="keyboard-hide" onPress={this.emit(EVENTS.HIDE_KEYBOARD)} />
       </View>
     )

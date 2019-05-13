@@ -1,7 +1,7 @@
-import Editor from './src/Editor';
-import Toolbar from './src/Toolbar';
+import TextEditor from './src/TextEditor';
+import TextToolbar from './src/TextToolbar';
 
 export {
-  Editor,
-  Toolbar,
+  TextEditor,
+  TextToolbar,
 };

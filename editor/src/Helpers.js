@@ -90,6 +90,8 @@ export const parseRawBlock = block => {
 }
 
 export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
+  if(selection.id !== row.id) { return null }
+
   let rowCursorAt = cursorAt !== null ? cursorAt : selection.start
 
   let currentBlock = {}
@@ -191,7 +193,7 @@ export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = [
   return styles
 }
 
-export const attachStylesToSelected = ({ selection, row, newStyles, oldStyles }) => {
+export const attachStylesToSelectedText = ({ selection, row, newStyles, oldStyles }) => {
   const { startBlock, endBlock } = getSelectedBlocks({ selection, row })
 
   const { blocks } = row
@@ -332,6 +334,55 @@ export const removeSelectedText = ({ selection, row }) => {
   const data = [...p1, ...newBlocks, ...p2].filter(i => !!i.text)
 
   return data
+}
+
+export const splitRow = ({ row, selection }) => {
+
+  if(selection.id !== row.id) { return }
+  
+  let rows = []
+
+  const { value = '', type, blocks = [] } = row
+  
+  const rowBlocks = blocks.filter(item => item.text)
+
+  const textParts = splitString(value, selection.start)
+
+  const row1 = { id: generateId(), value: textParts[0], type }
+  const row2 = { id: generateId(), value: textParts[1], type }
+
+  const currentBlock = getCurrentBlockInRow({ row, selection })
+
+  let blockTexts = ''
+  for (let i = 0; i < rowBlocks.length; i++) {
+    const block = rowBlocks[i];
+    blockTexts += block.text
+    if(blockTexts.length >= row1.value.length) {
+      
+      let row1Blocks = rowBlocks.filter((item, index) => index < i) || []
+
+      const blockTextParts = splitString(block.text, currentBlock.pointerAt)
+
+      
+      if(blockTextParts[0]) {
+        row1Blocks.push({ text: blockTextParts[0], styles: block.styles })
+      }
+      
+      let row2Blocks = rowBlocks.filter((item, index) => index > i) || []
+      if(blockTextParts[1]) {
+        row2Blocks.unshift({ text: blockTextParts[1], styles: block.styles })
+      }
+
+      row1.blocks = row1Blocks.filter(item => item.text)
+      row2.blocks = row2Blocks.filter(item => item.text)
+      
+      break;
+    }
+  }
+
+  rows = [row1, row2]
+
+  return rows
 }
 
 export const insertAt = (main_string, ins_string, pos) => {

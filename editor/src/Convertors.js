@@ -3,7 +3,7 @@ import { STYLE_TYPES, ROW_TYPES } from './Constants'
 
 import { generateId, parseRawBlock } from "./Helpers";
 
-export const convertToMarkdown = ({ rows }) => {
+export const convertToMarkdown = ({ rows = [] }) => {
   let markdown = ''
 
   rows.forEach(row => {
@@ -83,7 +83,7 @@ export const convertFromRaw = ({ contentState }) => {
   return result
 }
 
-export const convertToRaw = ({ rows }) => {
+export const convertToRaw = ({ rows = [] }) => {
   const result = { blocks: [], entityMap: {} }
 
   const sample = {

@@ -8,7 +8,7 @@ import getEmitter from "./editor/src/EventEmitter";
 import EVENTS from "./editor/src/Events";
 import { contentState } from "./editor/src/Helpers";
 
-import { Editor, Toolbar } from "./editor/index";
+import { TextEditor, TextToolbar } from "./editor/index";
 
 const eventEmitter = getEmitter()
 
@@ -48,14 +48,15 @@ export default class App extends React.Component {
           <View style={styles.container}>
             
             <KeyboardAwareView keyboardShouldPersistTaps animated>
+              
               <View style={styles.editor}>
-                <Editor
+                <TextEditor
                   data={contentState}
                   onChange={this.onChange}
                 />
               </View>
               
-              <Toolbar />
+              <TextToolbar />
             </KeyboardAwareView>
 
           </View>

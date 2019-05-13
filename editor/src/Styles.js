@@ -5,6 +5,13 @@ export default StyleSheet.create({
   flatList: {
     flex: 1,
   },
+  container: {
+    flex: 1,
+  },
+  editor: {
+    padding: 20,
+    flex: 1,
+  },
   contentContainerStyle: {
     // flex: 1
   },
