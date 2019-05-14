@@ -43,6 +43,12 @@ export default StyleSheet.create({
     flexDirection: 'row',
     flex: 1,
   },
+  hr: {
+    height: 1,
+    flex: 1,
+    backgroundColor: '#e3e3e3',
+    marginVertical: 10,
+  },
   bullet: {
     fontWeight: 'bold',
     marginRight: 5

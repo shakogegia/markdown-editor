@@ -1,7 +1,7 @@
 import React from 'react';
 import { StyleSheet, View, SafeAreaView, TouchableOpacity } from 'react-native';
 import { KeyboardAwareView } from 'react-native-keyboard-aware-view'
-import { Container, Header, Body, Title, Right, Left, Button, Text } from "native-base";
+import { Container, Header, Body, Title, Right, Left, Button, Icon, Text } from "native-base";
 
 
 import getEmitter from "./editor/src/EventEmitter";
@@ -12,10 +12,37 @@ import { TextEditor, TextToolbar } from "./editor/index";
 
 const eventEmitter = getEmitter()
 
+let editor = null
+
 export default class App extends React.Component {
+
 
   logState () {
     eventEmitter.emit(EVENTS.LOG_STATE)
+  }
+  
+  reload () {
+    if(editor) {
+      editor.reload()
+    } else {
+      console.log("reload");
+    }
+  }
+  
+  refresh () {
+    if(editor) {
+      editor.refresh()
+    } else {
+      console.log("refresh");
+    }
+  }
+  
+  clear () {
+    if(editor) {
+      editor.clear()
+    } else {
+      console.log("clear");
+    }
   }
 
   convert () {
@@ -31,17 +58,26 @@ export default class App extends React.Component {
       <Container>
         <Header>
           <Left>
-            <TouchableOpacity onPress={this.convert}>
-              <Text>Convert</Text>
-            </TouchableOpacity>
+            <Button transparent onPress={this.convert}>
+              <Icon name='save' />
+            </Button>
           </Left>
           <Body>
             <Title>Text Editor</Title>
           </Body>
           <Right>
-            <TouchableOpacity onPress={this.logState}>
-              <Text>Log State</Text>
-            </TouchableOpacity>
+            <Button transparent onPress={this.reload}>
+              <Icon name='md-refresh' />
+            </Button>
+            <Button transparent onPress={this.refresh}>
+              <Icon name='refresh' />
+            </Button>
+            <Button transparent onPress={this.clear}>
+              <Icon name='trash' />
+            </Button>
+            <Button transparent onPress={this.logState}>
+              <Icon name='list' />
+            </Button>
           </Right>
         </Header>
         <SafeAreaView style={{ flex: 1 }}>
@@ -51,6 +87,7 @@ export default class App extends React.Component {
               
               <View style={styles.editor}>
                 <TextEditor
+                  ref={e => { editor = e }}
                   data={contentState}
                   onChange={this.onChange}
                 />

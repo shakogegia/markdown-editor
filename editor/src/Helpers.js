@@ -90,7 +90,7 @@ export const parseRawBlock = block => {
 }
 
 export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
-  if(selection.id !== row.id) { return null }
+  if(cursorAt === null && selection.id !== row.id) { return null }
 
   let rowCursorAt = cursorAt !== null ? cursorAt : selection.start
 
