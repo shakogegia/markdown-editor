@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, View, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import { Text, View, TouchableOpacity, ScrollView, StyleSheet, InteractionManager } from 'react-native';
 
 import { MaterialIcons } from '@expo/vector-icons';
 
@@ -24,7 +24,7 @@ const Button = ({ icon, name, isActive = false, isDisabled = false, arrow = fals
   const textStyles = hasIcon && hasName ? styles.iconText : {}
   
   return (
-  <TouchableOpacity style={[styles.button, activeButtonStyle, disabledButtonStyle]} disabled={isDisabled} onPress={() => onPress()}>
+  <TouchableOpacity style={[styles.button, activeButtonStyle, disabledButtonStyle]} disabled={isDisabled} onPress={onPress}>
     {hasIcon && <MaterialIcons name={icon} color="black" size={20} />}
     {hasName && <Text style={[ textStyles ]}>{name}</Text>}
     {arrow && <MaterialIcons name={"keyboard-arrow-down"} color="#e3e3e3" size={16} />}
@@ -37,7 +37,8 @@ class Toolbar extends React.Component {
 
   state = {
     activeStyles: [],
-    activeRowType: ''
+    activeRowType: '',
+
   }
 
   componentDidMount() {
@@ -66,6 +67,18 @@ class Toolbar extends React.Component {
 
   emit = (event, params = {}) => () => {
     eventEmitter.emit(event, params)
+  }
+
+  toggleFormatAlign = () => {
+    // eventEmitter.emit(event, params)
+  }
+
+  toggleFormatFill = () => {
+    // eventEmitter.emit(event, params)
+  }
+  
+  toggleFormatText = () => {
+    // eventEmitter.emit(event, params)
   }
 
   render() {
@@ -110,7 +123,14 @@ class Toolbar extends React.Component {
           <Button icon="format-underlined" isActive={isActiveUnderline} isDisabled={isDisabledUnderline} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'underline'})} />
           <Button icon="strikethrough-s" isActive={isActiveStrikeThrough} isDisabled={isDisabledStrikeThrough} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'strikethrough'})} />
           <Divider />
+          
+          <Button icon="format-align-center" onPress={this.toggleFormatAlign} />
+          <Button icon="format-color-fill" onPress={this.toggleFormatFill} />
+          <Button icon="format-color-text" onPress={this.toggleFormatText} />
+          <Divider />
 
+          <Button icon="format-clear" onPress={this.emit(EVENTS.CLEAR_STYLES)} />
+          <Divider />
 
           <Button icon="code" name="Code" isActive={isActiveCode} isDisabled={isDisabledCode} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'code'})} />
           {/*

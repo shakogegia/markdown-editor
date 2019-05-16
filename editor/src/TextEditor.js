@@ -29,7 +29,7 @@ import styles from "./Styles";
 import StyledText from "./StyledText";
 import CheckBox from "./CheckBox";
 
-import { ROW_TYPES } from "./Constants";
+import { ROW_TYPES, STYLE_TYPES } from "./Constants";
 
 
 const eventEmitter = getEmitter()
@@ -65,6 +65,7 @@ class Editor extends React.Component {
     listeners.showInsertRow = eventEmitter.addListener(EVENTS.SHOW_INSERT_BLOCK, this.showInsertRow)
     listeners.showUploadFile = eventEmitter.addListener(EVENTS.SHOW_UPLOAD_FILE, this.showUploadFile)
     listeners.toggleStyle = eventEmitter.addListener(EVENTS.TOGGLE_STYLE, this.toggleStyle)
+    listeners.clearStyles = eventEmitter.addListener(EVENTS.CLEAR_STYLES, this.clearStyles)
     listeners.deleteActiveRow = eventEmitter.addListener(EVENTS.DELETE_BLOCK, this.deleteActiveRow)
     listeners.changeRowIndex = eventEmitter.addListener(EVENTS.CHANGE_BLOCK_INDEX, this.changeRowIndex)
     listeners.duplicateRow = eventEmitter.addListener(EVENTS.DUPLICATE_ROW, this.duplicateRow)
@@ -182,6 +183,34 @@ class Editor extends React.Component {
       const newRows = rows.concat([])
       newRows[activeRowIndex] = activeRow
 
+      newState = {...newState, rows: newRows, extraData: Date.now() }
+      throwOnChange = true
+    }
+
+    this.setState(newState, () => {
+      this.emitActiveStyles()
+      if(throwOnChange) {
+        this.emitOnChange()
+      }
+    })
+  }
+
+  // TODO: review
+  clearStyles = () => {
+    const { activeStyles = [], selection, activeRowIndex, rows } = this.state
+
+    const activeRow = Object.assign({}, rows[activeRowIndex])
+    
+    let newState = { activeStyles: [] }
+    let oldStyles = Object.values(STYLE_TYPES)
+    
+    let throwOnChange = false
+
+    if(activeRowIndex !== null && selection.start < selection.end && selection.id === activeRow.id) {
+      const data = attachStylesToSelectedText({ selection, row: activeRow, newStyles: [], oldStyles })
+      activeRow.blocks = data.blocks
+      const newRows = rows.concat([])
+      newRows[activeRowIndex] = activeRow
       newState = {...newState, rows: newRows, extraData: Date.now() }
       throwOnChange = true
     }
@@ -523,10 +552,11 @@ class Editor extends React.Component {
   }
   
   // TODO: done
-  onChangeText = ({ index }) => nv => {
+  onChangeText = ({ row, index }) => nv => {
     const { rows = [] } = this.state
     let newRows = [...rows]
     newRows[index].value = (nv || '')
+    row.value = (nv || '')
     this.setState({ blocks: newRows })
   }
 
@@ -567,8 +597,8 @@ class Editor extends React.Component {
   handleKeyPress = ({ row: item, index }) => ({ nativeEvent: { key: keyValue }, ...rest }) => {
     const { rows = [], selection, activeStyles } = this.state
     let row = item // Object.assign({}, item)
-    const currentRow = rows[index] // Object.assign({}, rows[index])
-    let blocks = currentRow.blocks // [...currentRow.blocks]
+    const currentRow = item // Object.assign({}, rows[index])
+    let blocks = item.blocks // [...currentRow.blocks]
 
     console.log("handleKeyPress fired::", keyValue)
 
@@ -1056,7 +1086,7 @@ class Editor extends React.Component {
           placeholder={placeholder}
           onSubmitEditing={this.onSubmitEditing({ row, index })}
           onFocus={this.onFocus({ row, index })}
-          onChangeText={this.onChangeText({ item: row, index })}
+          onChangeText={this.onChangeText({ row, index })}
           onKeyPress={this.handleKeyPress({ row, index })}
           onSelectionChange={this.onSelectionChange({ row, index })}
           style={[styles.textInput, inputStyles]}
