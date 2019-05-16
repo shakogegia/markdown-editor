@@ -32,7 +32,7 @@ const StyledText = ({ text, textStyles = [], type = 'text' }) => {
 
 const styles = StyleSheet.create({
   default: {
-    // backgroundColor: 'red'
+    // backgroundColor: 'red',
   },
   bold: {
     fontWeight: 'bold'

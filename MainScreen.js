@@ -16,6 +16,9 @@ let editor = null
 
 export default class App extends React.Component {
 
+  state = {
+    extraData: Date.now()
+  }
 
   logState () {
     eventEmitter.emit(EVENTS.LOG_STATE)
@@ -49,8 +52,9 @@ export default class App extends React.Component {
     eventEmitter.emit(EVENTS.CONVERT_TO_RAW)
   }
 
-  onChange (data) {
+  onChange = (data) => {
     // console.log(data)
+    this.setState({ extraData: Date.now() })
   }
 
   render() {
@@ -90,6 +94,7 @@ export default class App extends React.Component {
                   ref={e => { editor = e }}
                   data={contentState}
                   onChange={this.onChange}
+                  extraData={this.state.extraData}
                 />
               </View>
               

@@ -4,6 +4,7 @@ import { Text, TextInput, FlatList, Keyboard, StyleSheet } from 'react-native';
 export default StyleSheet.create({
   flatList: {
     flex: 1,
+    backgroundColor: 'white'
   },
   container: {
     flex: 1,
@@ -49,6 +50,20 @@ export default StyleSheet.create({
     backgroundColor: '#e3e3e3',
     marginVertical: 10,
   },
+  imageRow: {
+    flex: 1,
+    marginVertical: 15,
+    borderRadius: 5,
+    borderWidth: 1,
+    borderRadius: 15,
+    borderColor: '#e3e3e3',
+    overflow: 'hidden',
+    backgroundColor: 'white'
+  },
+  image: {
+    width: '100%',
+    height: 200,
+  },
   bullet: {
     fontWeight: 'bold',
     marginRight: 5
@@ -56,5 +71,41 @@ export default StyleSheet.create({
   numberOrder: {
     width: 20,
     marginRight: 2
+  },
+  sketchContainer: {
+    flex: 1,
+    padding: 20
+  },
+  sketch: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 15,
+    borderColor: '#e3e3e3',
+    backgroundColor: '#ffffff'
+  },
+  colorsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginHorizontal: 20,
+    marginTop: 20
+  },
+  colorDot: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  colorDotSelected: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+    backgroundColor: 'black'
+  },
+  sketchFooter: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
   }
 })

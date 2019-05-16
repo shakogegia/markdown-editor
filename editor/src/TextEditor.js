@@ -1,10 +1,11 @@
 import React from 'react';
 import _ from 'lodash';
-import { Text, View, ActivityIndicator, TextInput, FlatList, Keyboard, Modal, SafeAreaView } from 'react-native';
-
+import { Text, View, ActivityIndicator, TextInput, FlatList, Keyboard, Modal, SafeAreaView, Image, TouchableOpacity } from 'react-native';
 import { ActionSheet, Container, Header, Body, Title } from "native-base";
+import Lightbox from 'react-native-lightbox';
 import { KeyboardAwareView } from 'react-native-keyboard-aware-view'
 import TextToolbar from "./TextToolbar";
+import Sketch from "./Sketch";
 
 import {
   generateId,
@@ -40,6 +41,7 @@ const history = []
 class Editor extends React.Component {
 
   textInputRefs = []
+  sketch = null
   refs = []
 
   lastBlock = {}
@@ -47,6 +49,7 @@ class Editor extends React.Component {
   state = {
     isReady: false,
     isFullscreen: false,
+    isSketchVisible: false,
     rows: [],
     extraData: null,
     activeRowIndex: 0,
@@ -261,6 +264,7 @@ class Editor extends React.Component {
       [ROW_TYPES.BLOCKQUOTE]: 'Blockquote',
       [ROW_TYPES.BULLETS]:"Bulleted List",
       [ROW_TYPES.NUMBERS]:"Numbered List",
+      ["Sketch"]:"Sketch",
       cancel: 'Cancel'
     };
     var CANCEL_INDEX = Object.values(BUTTONS).length-1;
@@ -296,6 +300,9 @@ class Editor extends React.Component {
       }
       if (keys[i] === ROW_TYPES.NUMBERS) {
         this.insertList({ list: 'numbers' })
+      }
+      if (keys[i] === ROW_TYPES.Sketch) {
+        this.showSketchModal()
       }
     })
   }
@@ -410,6 +417,11 @@ class Editor extends React.Component {
     })
   }
 
+  // FIXME:
+  showSketchModal = () => {
+    this.setState({ isSketchVisible: true })
+  }
+
   /**
    * TODO: re-write
    * beginning press enter: insert new block before (keep type if is list)
@@ -485,9 +497,9 @@ class Editor extends React.Component {
   // FIXME: re-write
   handleKeyPress = ({ row: item, index }) => ({ nativeEvent: { key: keyValue }, ...rest }) => {
     const { rows = [], selection, activeStyles } = this.state
-    let row = Object.assign({}, item)
-    const currentRow = Object.assign({}, rows[index])
-    let blocks = [...currentRow.blocks]
+    let row = item // Object.assign({}, item)
+    const currentRow = rows[index] // Object.assign({}, rows[index])
+    let blocks = currentRow.blocks // [...currentRow.blocks]
 
     console.log("handleKeyPress fired::", keyValue)
 
@@ -522,7 +534,7 @@ class Editor extends React.Component {
         value: { props: currentBlock },
       })
       
-      let newBlocks = [].concat(blocks)
+      let newBlocks = blocks // [].concat(blocks)
       
       const isStylesChanged = !_.isEqual(activeStyles, blockStyles)
 
@@ -573,7 +585,9 @@ class Editor extends React.Component {
       newRows[index].blocks = newBlocks
       rows[index].blocks = newBlocks
 
-      this.setState({ rows, extraData: Date.now() })
+      let newState = {rows: newRows, extraData: Date.now() }
+
+      this.setState(newState)
     }
 
     this.emitOnChange()
@@ -673,7 +687,7 @@ class Editor extends React.Component {
 
   // TODO: half
   getContentState = () => {
-    return convertToRaw({ rows: this.state.blocks })
+    return convertToRaw({ rows: this.state.rows })
   }
 
   // TODO: done
@@ -846,6 +860,32 @@ class Editor extends React.Component {
     }
   }
 
+  // FIXME: 
+  handleImage = ({ row, index }) => () => {
+    const { activeRowIndex, rows = [] } = this.state
+
+    ActionSheet.show({
+      options: ['Delete', 'Cancel'],
+      cancelButtonIndex: 1,
+      destructiveButtonIndex: 0,
+      title: "Delete Image"
+    }, i => {
+      if (i === 0) {
+        // this.changeRowType({ index: activeRowIndex, type: ROW_TYPES.TEXT })
+        this.removeRow({ index, focusPrev: true })
+      }
+    })
+  }
+
+  // FIXME: 
+  onSketchSave = (image) => {
+    let newRowData = { id: generateId(), type: ROW_TYPES.IMAGE, image }
+    this.insertRow({ newRowData, insertAfterActive: true, focus: true }, () => {
+      this.setState({ isSketchVisible: false })
+    })
+  };
+
+
   // FIXME: re-think
   getPlaceholder = ({ row, index }) => {
     const { rows } = this.state
@@ -909,6 +949,11 @@ class Editor extends React.Component {
     if(row.type === ROW_TYPES.HR) {
       return this.renderLineBreak({ row, index })
     }
+    
+    if(row.type === ROW_TYPES.IMAGE) {
+      return this.renderImage({ row, index })
+    }
+
     const { selection } = this.state
 
     const placeholder = this.getPlaceholder({ row, index })
@@ -951,6 +996,19 @@ class Editor extends React.Component {
             />
           ))}
         </TextInput>
+      </View>
+    )
+  }
+
+  // FIXME: 
+  renderImage = ({ row, index }) => {
+    return (
+      <View style={styles.row}>
+        <TouchableOpacity style={styles.imageRow} onLongPress={this.handleImage({ row, index })}>
+          <Lightbox>
+            <Image source={{ uri: row.image }} resizeMode="contain" style={styles.image} />
+          </Lightbox>
+        </TouchableOpacity>
       </View>
     )
   }
@@ -1024,6 +1082,13 @@ class Editor extends React.Component {
     )
   }
 
+  // FIXME: empty
+  renderHeader = () => {
+    return (
+      <View />
+    )
+  }
+
   // FIXME: half
   renderList() {
     const { rows, extraData, isReady } = this.state
@@ -1043,6 +1108,7 @@ class Editor extends React.Component {
         renderItem={this.renderItem}
         ListFooterComponent={this.renderFooter}
         ListEmptyComponent={this.renderEmpty}
+        ListHeaderComponent={this.renderHeader}
         style={styles.flatList}
       />
     );
@@ -1078,18 +1144,36 @@ class Editor extends React.Component {
     );
   }
   
+  renderSketchModal() {
+    const { isSketchVisible } = this.state
+    return (
+      <Sketch
+        isSketchVisible={isSketchVisible}
+        onCancel={() => {this.setState({ isSketchVisible: false })}}
+        onSave={this.onSketchSave}
+      />
+    );
+  }
+  
   render() {
-    const { isFullscreen, isReady } = this.state
+    const { isFullscreen, isSketchVisible, isReady } = this.state
 
     if(!isReady) {
       return this.renderLoading()
     }
 
-    if (isFullscreen) {
-      return this.renderFullScreen()
-    } else {
-      return this.renderList()
-    }
+    // let content = this.renderList()
+
+    // if (isFullscreen) {
+    //   content = this.renderFullScreen()
+    // }
+
+    return (
+      <React.Fragment>
+        {this.renderList()}
+        {this.renderSketchModal()}
+      </React.Fragment>
+    )
   }
 }
 

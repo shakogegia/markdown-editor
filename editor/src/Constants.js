@@ -7,6 +7,7 @@ export const ROW_TYPES = {
   BLOCKQUOTE: 'blockquote',
   BULLETS: 'bullets',
   NUMBERS: 'numbers',
+  IMAGE: 'image',
 }
 
 export const STYLE_TYPES = {
