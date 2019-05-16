@@ -12,6 +12,14 @@ const StyledText = ({ text, textStyles = [], type = ROW_TYPES.TEXT, isCompleted 
     if(styles[key]) {
       inputStyles.push(styles[key])
     }
+
+    if(key.includes('fill')) {
+      inputStyles.push({ backgroundColor: key.split('-')[1] })
+    }
+
+    if(key.includes('color')) {
+      inputStyles.push({ color: key.split('-')[1] })
+    }
   });
 
   // Row Styles

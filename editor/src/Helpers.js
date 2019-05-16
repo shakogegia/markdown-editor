@@ -153,6 +153,7 @@ export const getSelectedBlocks = ({ selection, row }) => {
 
 export const splitString = (value = '', index) => [value.substring(0, index) , value.substring(index)]
 
+// FIXME: re-write
 export const mergeNewStyles = (currentStyles = [], newStyles = [], oldStyles = []) => {
   
   let styles = currentStyles // _.uniq(currentStyles)
@@ -342,14 +343,14 @@ export const splitRow = ({ row, selection }) => {
   
   let rows = []
 
-  const { value = '', type, blocks = [] } = row
+  const { value = '', type, align = 'auto', blocks = [] } = row
   
   const rowBlocks = blocks.filter(item => item.text)
 
   const textParts = splitString(value, selection.start)
 
-  const row1 = { id: generateId(), value: textParts[0], type }
-  const row2 = { id: generateId(), value: textParts[1], type }
+  const row1 = { id: generateId(), value: textParts[0], type, align }
+  const row2 = { id: generateId(), value: textParts[1], type, align }
 
   const currentBlock = getCurrentBlockInRow({ row, selection })
 

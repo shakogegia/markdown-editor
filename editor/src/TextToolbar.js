@@ -5,6 +5,7 @@ import { MaterialIcons } from '@expo/vector-icons';
 
 import getEmitter from "./EventEmitter";
 import EVENTS from "./Events";
+import { COLORS } from "./Constants";
 
 const eventEmitter = getEmitter()
 
@@ -33,12 +34,19 @@ const Button = ({ icon, name, isActive = false, isDisabled = false, arrow = fals
 
 const listeners = {}
 
+const VIEWS = {
+  DEFAULT: 'default',
+  ALIGN: 'align',
+  FILL: 'fill',
+  COLOR: 'color',
+}
+
 class Toolbar extends React.Component {
 
   state = {
     activeStyles: [],
     activeRowType: '',
-
+    activeView: VIEWS.DEFAULT
   }
 
   componentDidMount() {
@@ -70,20 +78,123 @@ class Toolbar extends React.Component {
   }
 
   toggleFormatAlign = () => {
-    // eventEmitter.emit(event, params)
+    this.setState({ activeView: VIEWS.ALIGN })
   }
 
   toggleFormatFill = () => {
-    // eventEmitter.emit(event, params)
+    this.setState({ activeView: VIEWS.FILL })
   }
   
-  toggleFormatText = () => {
-    // eventEmitter.emit(event, params)
+  toggleFormatColor = () => {
+    this.setState({ activeView: VIEWS.COLOR })
+  }
+  
+  setDefaultView = () => {
+    this.setState({ activeView: VIEWS.DEFAULT })
+  }
+  
+  selectColor = ({ color = 'default' }) => () => {
+    const { activeView } = this.state
+    let newColor = color
+
+    if(activeView === VIEWS.COLOR && color === 'default') {
+      newColor = 'black'
+    }
+
+    if(activeView === VIEWS.FILL && color === 'default') {
+      newColor = 'transparent'
+    }
+
+    InteractionManager.runAfterInteractions(() => {
+      this.emit(EVENTS.CHANGE_COLOR_STYLE,  { color: newColor, type: activeView })()
+    })
+    // this.setDefaultView()
+  }
+
+  renderColorPicker = () => {
+    const { activeStyles = [] } = this.state
+    return (
+      <View style={styles.toolbar}>
+        <Divider />
+        <Button icon="format-color-reset" onPress={this.selectColor({ color: 'default' })} />
+        
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps={"always"}
+          automaticallyAdjustContentInsets={false}
+          keyboardDismissMode="none"
+        >
+        
+        {COLORS.map(item => {
+          const type = VIEWS.COLOR ? 'color' : 'fill'
+          const isActive = activeStyles.includes(`${type}-${item}`)
+          return (
+          <React.Fragment key={`color-${item}`}>
+            <TouchableOpacity onPress={this.selectColor({ color: item })} style={[styles.colorDot, { backgroundColor: item }]}>
+              {isActive && (
+                <View style={styles.checkboxContainer}>
+                  <MaterialIcons name="check" size={24} color="white" />
+                </View>
+              )}
+            </TouchableOpacity>
+            <Divider />
+          </React.Fragment>
+        )})}
+
+        </ScrollView>
+        <Divider />
+        <Button icon="close" onPress={this.setDefaultView} />
+        <Divider />
+        <Button icon="keyboard-hide" onPress={this.emit(EVENTS.HIDE_KEYBOARD)} />
+      </View>
+    )
+  }
+
+  renderAlign = () => {
+    return (
+      <View style={styles.toolbar}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          keyboardShouldPersistTaps={"always"}
+          automaticallyAdjustContentInsets={false}
+          keyboardDismissMode="none"
+        >
+        
+        <Divider />
+        <Button icon="format-align-center" onPress={this.emit(EVENTS.ALIGN_ROW, { type: 'center' })} />
+        <Divider />
+        <Button icon="format-align-justify" onPress={this.emit(EVENTS.ALIGN_ROW, { type: 'justify' })} />
+        <Divider />
+        <Button icon="format-align-left" onPress={this.emit(EVENTS.ALIGN_ROW, { type: 'left' })} />
+        <Divider />
+        <Button icon="format-align-right" onPress={this.emit(EVENTS.ALIGN_ROW, { type: 'right' })} />
+        <Divider />
+
+        </ScrollView>
+        <Divider />
+        <Button icon="close" onPress={this.setDefaultView} />
+        <Divider />
+        <Button icon="keyboard-hide" onPress={this.emit(EVENTS.HIDE_KEYBOARD)} />
+      </View>
+    )
   }
 
   render() {
-    const { activeStyles, activeRowType } = this.state
+    const { activeStyles, activeRowType, activeView } = this.state
 
+    if(activeView === VIEWS.ALIGN) {
+      return this.renderAlign()
+    }
+    
+    if(activeView === VIEWS.FILL) {
+      return this.renderColorPicker()
+    }
+    
+    if(activeView === VIEWS.COLOR) {
+      return this.renderColorPicker()
+    }
 
     const isActiveBold = activeStyles.includes('bold')
     const isActiveItalic = activeStyles.includes('italic')
@@ -125,8 +236,10 @@ class Toolbar extends React.Component {
           <Divider />
           
           <Button icon="format-align-center" onPress={this.toggleFormatAlign} />
+          <Divider />
+
           <Button icon="format-color-fill" onPress={this.toggleFormatFill} />
-          <Button icon="format-color-text" onPress={this.toggleFormatText} />
+          <Button icon="format-color-text" onPress={this.toggleFormatColor} />
           <Divider />
 
           <Button icon="format-clear" onPress={this.emit(EVENTS.CLEAR_STYLES)} />
@@ -220,6 +333,15 @@ const styles = StyleSheet.create({
   },
   iconText: {
     marginLeft: 5
+  },
+  colorDot: {
+    minWidth: 40,
+  },
+  checkboxContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(55, 71, 79, 0.1)'
   }
 })
 

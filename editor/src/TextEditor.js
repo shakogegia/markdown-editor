@@ -29,7 +29,7 @@ import styles from "./Styles";
 import StyledText from "./StyledText";
 import CheckBox from "./CheckBox";
 
-import { ROW_TYPES, STYLE_TYPES } from "./Constants";
+import { ROW_TYPES, STYLE_TYPES, COLORS } from "./Constants";
 
 
 const eventEmitter = getEmitter()
@@ -66,6 +66,8 @@ class Editor extends React.Component {
     listeners.showUploadFile = eventEmitter.addListener(EVENTS.SHOW_UPLOAD_FILE, this.showUploadFile)
     listeners.toggleStyle = eventEmitter.addListener(EVENTS.TOGGLE_STYLE, this.toggleStyle)
     listeners.clearStyles = eventEmitter.addListener(EVENTS.CLEAR_STYLES, this.clearStyles)
+    listeners.changeColorStyles = eventEmitter.addListener(EVENTS.CHANGE_COLOR_STYLE, this.changeColorStyles)
+    listeners.alignRow = eventEmitter.addListener(EVENTS.ALIGN_ROW, this.alignRow)
     listeners.deleteActiveRow = eventEmitter.addListener(EVENTS.DELETE_BLOCK, this.deleteActiveRow)
     listeners.changeRowIndex = eventEmitter.addListener(EVENTS.CHANGE_BLOCK_INDEX, this.changeRowIndex)
     listeners.duplicateRow = eventEmitter.addListener(EVENTS.DUPLICATE_ROW, this.duplicateRow)
@@ -195,6 +197,46 @@ class Editor extends React.Component {
     })
   }
 
+  // TODO: Done
+  changeColorStyles = ({ color, type }) => {
+    const { activeStyles = [], selection, activeRowIndex, rows } = this.state
+
+    const activeRow = Object.assign({}, rows[activeRowIndex])
+    style = `${type}-${color}`
+    const isStyleActive = activeStyles.includes(style)
+    const oldStyles = [...activeStyles]
+
+    let newActiveStyles = []
+
+    if (isStyleActive) {
+      newActiveStyles = activeStyles.filter(i => i.toLowerCase() !== style)
+    } else {
+      newActiveStyles = activeStyles.filter(i => !i.toLowerCase().includes(type))
+      newActiveStyles = [...newActiveStyles, style]
+    }
+    
+    let newState = { activeStyles: newActiveStyles }
+    
+    let throwOnChange = true
+
+    if(activeRowIndex !== null && selection.start < selection.end && selection.id === activeRow.id) {
+      const data = attachStylesToSelectedText({ selection, row: activeRow, newStyles: newActiveStyles, oldStyles })
+      activeRow.blocks = data.blocks
+      const newRows = rows.concat([])
+      newRows[activeRowIndex] = activeRow
+
+      newState = {...newState, rows: newRows, extraData: Date.now() }
+      throwOnChange = true
+    }
+
+    this.setState(newState, () => {
+      this.emitActiveStyles()
+      if(throwOnChange) {
+        this.emitOnChange()
+      }
+    })
+  }
+
   // TODO: review
   clearStyles = () => {
     const { activeStyles = [], selection, activeRowIndex, rows } = this.state
@@ -202,7 +244,14 @@ class Editor extends React.Component {
     const activeRow = Object.assign({}, rows[activeRowIndex])
     
     let newState = { activeStyles: [] }
-    let oldStyles = Object.values(STYLE_TYPES)
+    const fills = COLORS.map(color => `fill-${color}`)
+    const colors = COLORS.map(color => `color-${color}`)
+    let oldStyles = [...Object.values(STYLE_TYPES), ...fills, ...colors]
+
+    console.tron.display({
+      name: 'oldStyles',
+      value: { props: oldStyles },
+    })
     
     let throwOnChange = false
 
@@ -220,6 +269,23 @@ class Editor extends React.Component {
       if(throwOnChange) {
         this.emitOnChange()
       }
+    })
+  }
+
+  // TODO: review
+  alignRow = ({ type }) => {
+    const { activeRowIndex, rows } = this.state
+
+    const activeRow = Object.assign({}, rows[activeRowIndex])
+    
+    const newRows = [...rows]
+    newRows[activeRowIndex].align = type
+    
+    const newState = {rows: newRows, extraData: Date.now() }
+
+    this.setState(newState, () => {
+      this.emitActiveStyles()
+      this.emitOnChange()
     })
   }
   
@@ -840,21 +906,26 @@ class Editor extends React.Component {
 
     let newRows = [...rows]
 
-    let newRowType = type
+    let newRow = newRowData || { id: generateId(), type: ROW_TYPES.TEXT, blocks: [], extraData: Date.now() }
+
 
     if(currentRow) {
       if(currentRow.type === ROW_TYPES.BULLETS) {
-        newRowType = ROW_TYPES.BULLETS
+        newRow.type = ROW_TYPES.BULLETS
       }
       if(currentRow.type === ROW_TYPES.NUMBERS) {
-        newRowType = ROW_TYPES.NUMBERS
+        newRow.type = ROW_TYPES.NUMBERS
       }
       if(currentRow.type === ROW_TYPES.TODOS) {
-        newRowType = ROW_TYPES.TODOS
+        newRow.type = ROW_TYPES.TODOS
       }
     }
-    
-    let newRow = newRowData || { id: generateId(), type: newRowType, blocks: [], extraData: Date.now() }
+
+    if(activeRowIndex !== null) {
+      const activeRow = Object.assign({}, rows[activeRowIndex])
+      newRow.align = activeRow.align
+    }
+
     newRow = Object.assign({}, newRow)
 
     let newRowIndex
@@ -1061,12 +1132,24 @@ class Editor extends React.Component {
     return numberOrder
   }
   
+  // TODO: half
+  getAlignStyles = ({ row }) => {
+    let styles = {}
+
+    if(row.align) {
+      styles.textAlign =row.align
+    }
+
+    return styles
+  }
+  
   // FIXME: needs attention
   renderInput = ({ row, index }) => {
     const { selection } = this.state
 
     const placeholder = this.getPlaceholder({ row, index })
     const inputStyles = this.getInputStyles({ row, index })
+    const alignStyles = this.getAlignStyles({ row, index })
 
     const isBullet = row.type === ROW_TYPES.BULLETS
     const isNumbers = row.type === ROW_TYPES.NUMBERS
@@ -1089,7 +1172,7 @@ class Editor extends React.Component {
           onChangeText={this.onChangeText({ row, index })}
           onKeyPress={this.handleKeyPress({ row, index })}
           onSelectionChange={this.onSelectionChange({ row, index })}
-          style={[styles.textInput, inputStyles]}
+          style={[styles.textInput, inputStyles, alignStyles]}
           clearButtonMode="never"
           blurOnSubmit={true}
           autoCorrect={false}
