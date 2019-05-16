@@ -95,7 +95,7 @@ class SketchModal extends React.Component {
       <Modal
         visible={isSketchVisible}
         transparent={false}
-        animation="fade"
+        animationType="slide"
         onRequestClose={onCancel}
       >
         <Container>

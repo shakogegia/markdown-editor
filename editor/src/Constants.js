@@ -3,6 +3,7 @@ export const ROW_TYPES = {
   HEADING1: 'heading1',
   HEADING2: 'heading2',
   HEADING3: 'heading3',
+  TODOS: 'todos',
   HR: 'hr',
   BLOCKQUOTE: 'blockquote',
   BULLETS: 'bullets',

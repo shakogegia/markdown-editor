@@ -43,6 +43,7 @@ export default StyleSheet.create({
   row: {
     flexDirection: 'row',
     flex: 1,
+    marginBottom: 2,
   },
   hr: {
     height: 1,
@@ -71,6 +72,9 @@ export default StyleSheet.create({
   numberOrder: {
     width: 20,
     marginRight: 2
+  },
+  checkbox: {
+    paddingRight: 5,
   },
   sketchContainer: {
     flex: 1,

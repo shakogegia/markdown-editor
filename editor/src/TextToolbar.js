@@ -98,8 +98,11 @@ class Toolbar extends React.Component {
         >
           <Button icon="add-circle-outline" onPress={this.emit(EVENTS.SHOW_INSERT_BLOCK)} />
           <Divider />
-
+          
           <Button name="Turn Into" arrow onPress={this.emit(EVENTS.CHANGE_BLOCK_TYPE)} />
+          <Divider />
+          
+          <Button icon="insert-photo" onPress={this.emit(EVENTS.SHOW_UPLOAD_FILE)} />
           <Divider />
 
           <Button icon="format-bold" isActive={isActiveBold} isDisabled={isDisabledBold} onPress={this.emit(EVENTS.TOGGLE_STYLE, { style: 'bold'})} />

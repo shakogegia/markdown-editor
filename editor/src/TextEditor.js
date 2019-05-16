@@ -1,5 +1,6 @@
 import React from 'react';
 import _ from 'lodash';
+import { ImagePicker, Permissions } from 'expo';
 import { Text, View, ActivityIndicator, TextInput, FlatList, Keyboard, Modal, SafeAreaView, Image, TouchableOpacity } from 'react-native';
 import { ActionSheet, Container, Header, Body, Title } from "native-base";
 import Lightbox from 'react-native-lightbox';
@@ -26,6 +27,7 @@ import EVENTS from "./Events";
 
 import styles from "./Styles";
 import StyledText from "./StyledText";
+import CheckBox from "./CheckBox";
 
 import { ROW_TYPES } from "./Constants";
 
@@ -34,7 +36,7 @@ const eventEmitter = getEmitter()
 
 const listeners = {}
 
-const isListRow = type => type === ROW_TYPES.BULLETS || type === ROW_TYPES.NUMBERS
+const isListRow = type => type === ROW_TYPES.BULLETS || type === ROW_TYPES.NUMBERS || type === ROW_TYPES.TODOS
 
 const history = []
 
@@ -61,6 +63,7 @@ class Editor extends React.Component {
     listeners.hideKeyboard = eventEmitter.addListener(EVENTS.HIDE_KEYBOARD, this.hideKeyboard)
     listeners.toggleFullscreen = eventEmitter.addListener(EVENTS.TOGGLE_FULL_SCREEN, this.toggleFullscreen)
     listeners.showInsertRow = eventEmitter.addListener(EVENTS.SHOW_INSERT_BLOCK, this.showInsertRow)
+    listeners.showUploadFile = eventEmitter.addListener(EVENTS.SHOW_UPLOAD_FILE, this.showUploadFile)
     listeners.toggleStyle = eventEmitter.addListener(EVENTS.TOGGLE_STYLE, this.toggleStyle)
     listeners.deleteActiveRow = eventEmitter.addListener(EVENTS.DELETE_BLOCK, this.deleteActiveRow)
     listeners.changeRowIndex = eventEmitter.addListener(EVENTS.CHANGE_BLOCK_INDEX, this.changeRowIndex)
@@ -217,6 +220,7 @@ class Editor extends React.Component {
       [ROW_TYPES.BLOCKQUOTE]:"Blockquote",
       [ROW_TYPES.BULLETS]:"Bulleted List",
       [ROW_TYPES.NUMBERS]:"Numbered List",
+      [ROW_TYPES.TODOS]:"TODO List",
       cancel: 'Cancel'
     };
     var CANCEL_INDEX = Object.values(BUTTONS).length-1;
@@ -247,8 +251,11 @@ class Editor extends React.Component {
       if (keys[i] === 'bullets') {
         this.changeRowType({ index: activeRowIndex, type: ROW_TYPES.BULLETS })
       }
-      if (keys[i] === 'numbers') {
+      if (keys[i] === ROW_TYPES.NUMBERS) {
         this.changeRowType({ index: activeRowIndex, type: ROW_TYPES.NUMBERS })
+      }
+      if (keys[i] === ROW_TYPES.TODOS) {
+        this.changeRowType({ index: activeRowIndex, type: ROW_TYPES.TODOS })
       }
     })
   }
@@ -264,6 +271,7 @@ class Editor extends React.Component {
       [ROW_TYPES.BLOCKQUOTE]: 'Blockquote',
       [ROW_TYPES.BULLETS]:"Bulleted List",
       [ROW_TYPES.NUMBERS]:"Numbered List",
+      [ROW_TYPES.TODOS]:"TODO List",
       ["Sketch"]:"Sketch",
       cancel: 'Cancel'
     };
@@ -301,10 +309,71 @@ class Editor extends React.Component {
       if (keys[i] === ROW_TYPES.NUMBERS) {
         this.insertList({ list: 'numbers' })
       }
-      if (keys[i] === ROW_TYPES.Sketch) {
+      if (keys[i] === ROW_TYPES.TODOS) {
+        this.insertList({ list: 'todos' })
+      }
+      if (keys[i] === "Sketch") {
         this.showSketchModal()
       }
     })
+  }
+
+  // FIXME: done
+  showUploadFile = () => {
+    var BUTTONS = {
+      ["Take Photo"]:"Take Photo",
+      ["Browse Photo"]:"Browse Photo",
+      cancel: 'Cancel'
+    };
+    var CANCEL_INDEX = Object.values(BUTTONS).length-1;
+    var DESTRUCTIVE_INDEX = -1
+
+    ActionSheet.show({
+      options: Object.values(BUTTONS),
+      cancelButtonIndex: CANCEL_INDEX,
+      destructiveButtonIndex: DESTRUCTIVE_INDEX,
+      title: "Insert Image"
+    }, i => {
+      const keys = Object.keys(BUTTONS)
+      if (keys[i] === "Take Photo") {
+        this.insertImage({ type: "Take Photo" })
+      }
+      if (keys[i] === "Browse Photo") {
+        this.insertImage({ type: "Browse Photo" })
+      }
+    })
+  }
+
+  // FIXME: Done
+  insertImage = async ({ type }) => {
+    const { statusCamera } = await Permissions.askAsync(Permissions.CAMERA);
+    if(statusCamera === 'granted') {
+      alert('CAMERA Permission Error')
+      return
+    }
+    
+    const { statusLibrary } = await Permissions.askAsync(Permissions.CAMERA_ROLL);
+    if(statusLibrary === 'granted') {
+      alert('CAMERA_ROLL Permission Error')
+      return
+    }
+
+    const pickerTypes = {
+     ['Take Photo'] : 'launchCameraAsync',
+     ['Browse Photo'] : 'launchImageLibraryAsync',
+    }
+
+    let result = await ImagePicker[pickerTypes[type]]({
+      allowsEditing: true,
+      aspect: [4, 3],
+    });
+
+    console.log(result);
+
+    if (!result.cancelled) {
+      let newRowData = { id: generateId(), type: ROW_TYPES.IMAGE, image: result.uri }
+      this.insertRow({ newRowData, insertAfterActive: true, focus: true })
+    }
   }
 
   // TODO: Done
@@ -750,10 +819,14 @@ class Editor extends React.Component {
       if(currentRow.type === ROW_TYPES.NUMBERS) {
         newRowType = ROW_TYPES.NUMBERS
       }
+      if(currentRow.type === ROW_TYPES.TODOS) {
+        newRowType = ROW_TYPES.TODOS
+      }
     }
     
-    const newRow = newRowData || { id: generateId(), type: newRowType, blocks: [], extraData: Date.now() }
-    
+    let newRow = newRowData || { id: generateId(), type: newRowType, blocks: [], extraData: Date.now() }
+    newRow = Object.assign({}, newRow)
+
     let newRowIndex
 
     if(activeRowIndex !== null && insertAtActive) {
@@ -863,7 +936,6 @@ class Editor extends React.Component {
   // FIXME: 
   handleImage = ({ row, index }) => () => {
     const { activeRowIndex, rows = [] } = this.state
-
     ActionSheet.show({
       options: ['Delete', 'Cancel'],
       cancelButtonIndex: 1,
@@ -878,7 +950,22 @@ class Editor extends React.Component {
   }
 
   // FIXME: 
+  toggleTodo = ({ row, index }) => () => {
+    const { rows = [] } = this.state
+    const isCompleted = !row.isCompleted
+    const newRows = [...rows]
+    newRows[index].isCompleted = isCompleted
+    this.setState({ rows: newRows })
+  }
+
+
+  // FIXME: 
   onSketchSave = (image) => {
+    if(!image) {
+      this.setState({ isSketchVisible: false })
+      return
+    }
+
     let newRowData = { id: generateId(), type: ROW_TYPES.IMAGE, image }
     this.insertRow({ newRowData, insertAfterActive: true, focus: true }, () => {
       this.setState({ isSketchVisible: false })
@@ -945,15 +1032,7 @@ class Editor extends React.Component {
   }
   
   // FIXME: needs attention
-  renderItem = ({ item: row, index }) => {
-    if(row.type === ROW_TYPES.HR) {
-      return this.renderLineBreak({ row, index })
-    }
-    
-    if(row.type === ROW_TYPES.IMAGE) {
-      return this.renderImage({ row, index })
-    }
-
+  renderInput = ({ row, index }) => {
     const { selection } = this.state
 
     const placeholder = this.getPlaceholder({ row, index })
@@ -961,6 +1040,7 @@ class Editor extends React.Component {
 
     const isBullet = row.type === ROW_TYPES.BULLETS
     const isNumbers = row.type === ROW_TYPES.NUMBERS
+    const isTodo = row.type === ROW_TYPES.TODOS
     const numberOrder = this.getNumberOrder({row, index})
 
     const { blocks = [] } = row
@@ -969,6 +1049,7 @@ class Editor extends React.Component {
       <View style={styles.row}>
         {isBullet && <Text style={styles.bullet}>•</Text>}
         {isNumbers && <Text style={styles.numberOrder}>{numberOrder}.</Text>}
+        {isTodo && <CheckBox style={styles.checkbox} isChecked={row.isCompleted} toggle={this.toggleTodo({ row, index })} />}
         <TextInput
           underlineColorAndroid="transparent"
           ref={(input) => { this.textInputRefs[index] = input; }}
@@ -993,11 +1074,25 @@ class Editor extends React.Component {
               textStyles={block.styles}
               text={block.text}
               type={row.type}
+              isCompleted={row.isCompleted}
             />
           ))}
         </TextInput>
       </View>
     )
+  }
+
+  // FIXME: needs attention
+  renderItem = ({ item: row, index }) => {
+    if(row.type === ROW_TYPES.HR) {
+      return this.renderLineBreak({ row, index })
+    }
+    
+    if(row.type === ROW_TYPES.IMAGE) {
+      return this.renderImage({ row, index })
+    }
+
+    return this.renderInput({ row, index })
   }
 
   // FIXME: 
@@ -1120,7 +1215,7 @@ class Editor extends React.Component {
       <Modal
         visible={isFullscreen}
         transparent={false}
-        animation="fade"
+        animationType="slide"
         onRequestClose={() => {}}
       >
         <Container>
@@ -1162,15 +1257,9 @@ class Editor extends React.Component {
       return this.renderLoading()
     }
 
-    // let content = this.renderList()
-
-    // if (isFullscreen) {
-    //   content = this.renderFullScreen()
-    // }
-
     return (
       <React.Fragment>
-        {this.renderList()}
+        {isFullscreen ? this.renderFullScreen() : this.renderList()}
         {this.renderSketchModal()}
       </React.Fragment>
     )

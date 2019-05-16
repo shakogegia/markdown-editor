@@ -1,7 +1,9 @@
 import React from 'react';
 import { Text, StyleSheet } from 'react-native';
 
-const StyledText = ({ text, textStyles = [], type = 'text' }) => {
+import { ROW_TYPES } from "./Constants";
+
+const StyledText = ({ text, textStyles = [], type = ROW_TYPES.TEXT, isCompleted = false }) => {
   let inputStyles = [styles.default]
 
   // Block Styles
@@ -17,8 +19,8 @@ const StyledText = ({ text, textStyles = [], type = 'text' }) => {
     inputStyles.push(styles[type])
   }
 
-  if(text === 'ze') {
-    console.log(text, inputStyles)
+  if(type === ROW_TYPES.TODOS && isCompleted === true) {
+    inputStyles = [styles.default, styles.strikethrough]
   }
 
   return (
