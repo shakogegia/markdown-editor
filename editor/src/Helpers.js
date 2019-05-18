@@ -138,7 +138,7 @@ export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
       }
     }
     
-    console.log("Cursor is At middle text::", pointerAt)
+    // console.log("Cursor is At middle text::", pointerAt)
   }
 
   return { block: currentBlock, blockIndex, pointerAt, position }

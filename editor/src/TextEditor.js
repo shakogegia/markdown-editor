@@ -47,7 +47,7 @@ class Editor extends React.Component {
   refs = []
 
   lastBlock = {}
-  
+
   state = {
     isReady: false,
     isFullscreen: false,
@@ -384,13 +384,13 @@ class Editor extends React.Component {
         this.insertRow({ focus: true })
       }
       if (keys[i] === ROW_TYPES.HEADING1) {
-        this.insertHeading({ heading: 'heading1' })
+        this.insertHeading({ heading: ROW_TYPES.HEADING1 })
       }
       if (keys[i] === ROW_TYPES.HEADING2) {
-        this.insertHeading({ heading: 'heading2' })
+        this.insertHeading({ heading: ROW_TYPES.HEADING2 })
       }
       if (keys[i] === ROW_TYPES.HEADING3) {
-        this.insertHeading({ heading: 'heading3' })
+        this.insertHeading({ heading: ROW_TYPES.HEADING3 })
       }
       if (keys[i] === ROW_TYPES.HR) {
         this.insertRow({ type: ROW_TYPES.HR, focus: false, insertAfterActive: true })
@@ -666,7 +666,7 @@ class Editor extends React.Component {
     const currentRow = item // Object.assign({}, rows[index])
     let blocks = item.blocks // [...currentRow.blocks]
 
-    console.log("handleKeyPress fired::", keyValue)
+    // console.log("handleKeyPress fired::", keyValue)
 
     if (keyValue === 'Backspace') {
       this.handleBackspace({ row, index })
@@ -694,10 +694,10 @@ class Editor extends React.Component {
         blockIndex
       } =  currentBlock || {}
 
-      console.tron.display({
-        name: 'currentBlock',
-        value: { props: currentBlock },
-      })
+      // console.tron.display({
+      //   name: 'currentBlock',
+      //   value: { props: currentBlock },
+      // })
       
       let newBlocks = blocks // [].concat(blocks)
       
@@ -708,10 +708,10 @@ class Editor extends React.Component {
         let p1 = blocks.slice(0, blockIndex)
         let p2 = blocks.slice(blockIndex+1)
 
-        console.tron.display({
-          name: 'p1, p2',
-          value: { p1, p2 },
-        })
+        // console.tron.display({
+        //   name: 'p1, p2',
+        //   value: { p1, p2 },
+        // })
         
         const newCharBlocks = []
 
@@ -732,10 +732,10 @@ class Editor extends React.Component {
         
         newBlocks = [...p1, ...newCharBlocks, ...p2]
 
-        console.tron.display({
-          name: 'newCharBlocks',
-          value: { newCharBlocks, p1, p2,  },
-        })
+        // console.tron.display({
+        //   name: 'newCharBlocks',
+        //   value: { newCharBlocks, p1, p2,  },
+        // })
 
       } else {
         const newBlockText = insertAt(blockText, keyValue, currentBlock.pointerAt)
@@ -779,7 +779,7 @@ class Editor extends React.Component {
 
     this.setState({ selection: newSelection }, () => {
       
-      console.log("onSelectionChange::", selection.start, selection.end, activeRowIndex)
+      // console.log("onSelectionChange::", selection.start, selection.end, activeRowIndex)
       
       setTimeout(() => {
         if (newSelection.start === newSelection.end && activeRowIndex !== null) {
@@ -906,7 +906,7 @@ class Editor extends React.Component {
 
     let newRows = [...rows]
 
-    let newRow = newRowData || { id: generateId(), type: ROW_TYPES.TEXT, blocks: [], extraData: Date.now() }
+    let newRow = newRowData || { id: generateId(), type, blocks: [] }
 
 
     if(currentRow) {
@@ -978,8 +978,7 @@ class Editor extends React.Component {
 
   // TODO: done
   insertHeading = ({ heading }) => {
-    const key = heading.toUpperCase()
-    this.insertRow({ type: ROW_TYPES[key], focus: true, insertAfterActive: true })
+    this.insertRow({ type: heading, focus: true, insertAfterActive: true })
   }
   
   // TODO: done

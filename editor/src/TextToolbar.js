@@ -114,7 +114,7 @@ class Toolbar extends React.Component {
   renderColorPicker = () => {
     const { activeStyles = [] } = this.state
     return (
-      <View style={styles.toolbar}>
+      <React.Fragment>
         <Divider />
         <Button icon="format-color-reset" onPress={this.selectColor({ color: 'default' })} />
         
@@ -147,13 +147,13 @@ class Toolbar extends React.Component {
         <Button icon="close" onPress={this.setDefaultView} />
         <Divider />
         <Button icon="keyboard-hide" onPress={this.emit(EVENTS.HIDE_KEYBOARD)} />
-      </View>
+      </React.Fragment>
     )
   }
 
   renderAlign = () => {
     return (
-      <View style={styles.toolbar}>
+      <React.Fragment>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -177,24 +177,12 @@ class Toolbar extends React.Component {
         <Button icon="close" onPress={this.setDefaultView} />
         <Divider />
         <Button icon="keyboard-hide" onPress={this.emit(EVENTS.HIDE_KEYBOARD)} />
-      </View>
+      </React.Fragment>
     )
   }
 
-  render() {
+  renderDefault = () => {
     const { activeStyles, activeRowType, activeView } = this.state
-
-    if(activeView === VIEWS.ALIGN) {
-      return this.renderAlign()
-    }
-    
-    if(activeView === VIEWS.FILL) {
-      return this.renderColorPicker()
-    }
-    
-    if(activeView === VIEWS.COLOR) {
-      return this.renderColorPicker()
-    }
 
     const isActiveBold = activeStyles.includes('bold')
     const isActiveItalic = activeStyles.includes('italic')
@@ -211,7 +199,7 @@ class Toolbar extends React.Component {
     const isDisabledLink = activeRowType.includes('link')
 
     return (
-      <View style={styles.toolbar}>
+      <React.Fragment>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -297,6 +285,19 @@ class Toolbar extends React.Component {
         <Button icon="fullscreen" onPress={this.emit(EVENTS.TOGGLE_FULL_SCREEN)} />
         <Divider />
         <Button icon="keyboard-hide" onPress={this.emit(EVENTS.HIDE_KEYBOARD)} />
+      </React.Fragment>
+    )
+  }
+
+  render() {
+    const { activeStyles, activeRowType, activeView } = this.state
+
+    return (
+      <View style={styles.toolbar}>
+        { activeView === VIEWS.ALIGN && this.renderAlign() }
+        { activeView === VIEWS.COLOR && this.renderColorPicker() }
+        { activeView === VIEWS.FILL && this.renderColorPicker() }
+        { activeView === VIEWS.DEFAULT && this.renderDefault() }
       </View>
     )
   }

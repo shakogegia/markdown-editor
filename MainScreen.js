@@ -85,10 +85,8 @@ export default class App extends React.Component {
           </Right>
         </Header>
         <SafeAreaView style={{ flex: 1 }}>
-          <View style={styles.container}>
-            
+          <Container>
             <KeyboardAwareView keyboardShouldPersistTaps animated>
-              
               <View style={styles.editor}>
                 <TextEditor
                   ref={e => { editor = e }}
@@ -97,11 +95,9 @@ export default class App extends React.Component {
                   extraData={this.state.extraData}
                 />
               </View>
-              
               <TextToolbar />
             </KeyboardAwareView>
-
-          </View>
+          </Container>
         </SafeAreaView>
       </Container>
     );
