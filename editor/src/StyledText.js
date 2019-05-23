@@ -4,6 +4,9 @@ import { Text, StyleSheet } from 'react-native';
 import { ROW_TYPES } from "./Constants";
 
 const StyledText = ({ text, textStyles = [], type = ROW_TYPES.TEXT, isCompleted = false }) => {
+
+  let newText = text.replace(/@/, '')
+
   let inputStyles = [styles.default]
 
   // Block Styles
@@ -32,11 +35,7 @@ const StyledText = ({ text, textStyles = [], type = ROW_TYPES.TEXT, isCompleted 
   }
 
   return (
-    <Text
-      selectionColor={"red"}
-      style={inputStyles}
-      onPress={() => console.log("tetx") }
-    >{text}</Text>
+    <Text style={inputStyles}>{newText}</Text>
   )
 }
 

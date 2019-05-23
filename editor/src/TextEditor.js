@@ -27,6 +27,7 @@ import EVENTS from "./Events";
 
 import styles from "./Styles";
 import StyledText from "./StyledText";
+import StyledTextInput from "./StyledTextInput";
 import CheckBox from "./CheckBox";
 
 import { ROW_TYPES, STYLE_TYPES, COLORS } from "./Constants";
@@ -182,14 +183,24 @@ class Editor extends React.Component {
     if(activeRowIndex !== null && selection.start < selection.end && selection.id === activeRow.id) {
       const data = attachStylesToSelectedText({ selection, row: activeRow, newStyles: newActiveStyles, oldStyles })
       activeRow.blocks = data.blocks
-      const newRows = rows.concat([])
+      const newRows = [...rows]
       newRows[activeRowIndex] = activeRow
 
-      newState = {...newState, rows: newRows, extraData: Date.now() }
+      newState = {...newState, rows: newRows }
+      throwOnChange = true
+    } else {
+      activeRow.blocks.push({ text: '@', styles: newActiveStyles })
+      const newRows = [...rows]
+      newRows[activeRowIndex] = activeRow
+      newState = {...newState, rows: newRows }
       throwOnChange = true
     }
+    
 
-    this.setState(newState, () => {
+    this.setState({...newState, extraData: Date.now()}, () => {
+      
+      // this.textInputRefs[activeRowIndex].refresh({ focus: true })
+
       this.emitActiveStyles()
       if(throwOnChange) {
         this.emitOnChange()
@@ -484,13 +495,14 @@ class Editor extends React.Component {
   }
 
   // TODO: Done
-  emitActiveStyles = ({ activeStyles, updateState = false } = {}) => {
+  emitActiveStyles = ({ activeStyles, updateState = false } = {}, callback = () => {}) => {
     let newActiveStyles = activeStyles || this.state.activeStyles
     newActiveStyles = _.uniq(newActiveStyles)
     getEmitter().emit(EVENTS.ACTIVE_STYLE_CHANGED, { activeStyles: newActiveStyles })
     if(updateState) {
       this.setState({ activeStyles })
     }
+    callback()
   }
   
   // TODO: Done
@@ -581,7 +593,7 @@ class Editor extends React.Component {
     })
   }
 
-  // FIXME:
+  // TODO: done
   showSketchModal = () => {
     this.setState({ isSketchVisible: true })
   }
@@ -595,8 +607,15 @@ class Editor extends React.Component {
   onSubmitEditing = ({ row, index }) => () => {
     const { rows = [], selection } = this.state
 
-    const currentRow = Object.assign({}, rows[index])
     const nextRow = Object.assign({}, rows[index+1])
+    const currentRow = Object.assign({}, rows[index])
+
+    // If there is selected text, remove first
+    // if (selection.start < selection.end) {
+    //   const newRowBlocks = removeSelectedText({ selection, row }) || []
+    //   currentRow.blocks = newRowBlocks
+    //   row.blocks = newRowBlocks
+    // }
 
     if (selection.start === 0 && selection.end === 0 && currentRow.value) {
       this.insertRow({ focus: false, currentRow, insertBeforeActive: true, focusIndex: index+1 })
@@ -618,15 +637,15 @@ class Editor extends React.Component {
   }
   
   // TODO: done
-  onChangeText = ({ row, index }) => nv => {
+  onChangeText = ({ row, index }) => (nv = '') => {
     const { rows = [] } = this.state
     let newRows = [...rows]
-    newRows[index].value = (nv || '')
-    row.value = (nv || '')
-    this.setState({ blocks: newRows })
+    newRows[index].value = nv
+    row.value = nv
+    this.setState({ rows: newRows })
   }
 
-  // FIXME: re-write
+  // FIXME: check
   handleBackspace = ({ row: item, index }) => {
     const { selection, rows = [] } = this.state
     let row = Object.assign({}, item)
@@ -659,7 +678,7 @@ class Editor extends React.Component {
     }
   }
 
-  // FIXME: re-write
+  // FIXME: check
   handleKeyPress = ({ row: item, index }) => ({ nativeEvent: { key: keyValue }, ...rest }) => {
     const { rows = [], selection, activeStyles } = this.state
     let row = item // Object.assign({}, item)
@@ -683,16 +702,16 @@ class Editor extends React.Component {
         blocks = [].concat(newRowBlocks)
       }
 
-      const currentBlock = getCurrentBlockInRow({ selection, row })
+      const currentBlock = getCurrentBlockInRow({ selection, row }) || {}
 
       const { 
         block: {
           text: blockText = '', 
           styles: blockStyles = []
         } = {},
-        pointerAt,
-        blockIndex
-      } =  currentBlock || {}
+        pointerAt = 0,
+        blockIndex = 0
+      } =  currentBlock
 
       // console.tron.display({
       //   name: 'currentBlock',
@@ -738,20 +757,20 @@ class Editor extends React.Component {
         // })
 
       } else {
-        const newBlockText = insertAt(blockText, keyValue, currentBlock.pointerAt)
-        if (!newBlocks[currentBlock.blockIndex]) {
-          newBlocks[currentBlock.blockIndex] = {}
+        const newBlockText = insertAt(blockText, keyValue, pointerAt)
+        if (!newBlocks[blockIndex]) {
+          newBlocks[blockIndex] = {}
         }
-        newBlocks[currentBlock.blockIndex].text = newBlockText
+        newBlocks[blockIndex].text = newBlockText
       }
 
       // let newRows = [].concat(rows)
       let newRows = [...rows]
       newRows[index].blocks = newBlocks
+      // newRows[index].value = newBlocks.map(i => item.text).join()
       rows[index].blocks = newBlocks
 
-      let newState = {rows: newRows, extraData: Date.now() }
-
+      let newState = {rows: rows, extraData: Date.now() }
       this.setState(newState)
     }
 
@@ -966,13 +985,13 @@ class Editor extends React.Component {
       this.emitActiveStyles()
       this.emitOnChange()
       callback({ newRowIndex, newRow })
-      setTimeout(() => {
+      // setTimeout(() => {
         if(focus) {
           this.focusRow({ index: newRowIndex, isNew: true })
         } if(focusIndex !== null) {
           this.focusRow({ index: focusIndex })
         }
-      });
+      // });
     })
   }
 
@@ -1141,11 +1160,8 @@ class Editor extends React.Component {
 
     return styles
   }
-  
-  // FIXME: needs attention
-  renderInput = ({ row, index }) => {
-    const { selection } = this.state
 
+  renderInput = ({ row, index }) => {
     const placeholder = this.getPlaceholder({ row, index })
     const inputStyles = this.getInputStyles({ row, index })
     const alignStyles = this.getAlignStyles({ row, index })
@@ -1162,34 +1178,22 @@ class Editor extends React.Component {
         {isBullet && <Text style={styles.bullet}>•</Text>}
         {isNumbers && <Text style={styles.numberOrder}>{numberOrder}.</Text>}
         {isTodo && <CheckBox style={styles.checkbox} isChecked={row.isCompleted} toggle={this.toggleTodo({ row, index })} />}
-        <TextInput
+        <StyledTextInput
           underlineColorAndroid="transparent"
           ref={(input) => { this.textInputRefs[index] = input; }}
           placeholder={placeholder}
-          onSubmitEditing={this.onSubmitEditing({ row, index })}
-          onFocus={this.onFocus({ row, index })}
-          onChangeText={this.onChangeText({ row, index })}
-          onKeyPress={this.handleKeyPress({ row, index })}
-          onSelectionChange={this.onSelectionChange({ row, index })}
-          style={[styles.textInput, inputStyles, alignStyles]}
-          clearButtonMode="never"
-          blurOnSubmit={true}
-          autoCorrect={false}
-          autoCapitalize="none"
-          returnKeyType="default"
-          multiline={!false}
-          scrollEnabled={false}
-        >
-          {blocks.map((block, i) => (
-            <StyledText
-              key={`${row.id}-${i}`}
-              textStyles={block.styles}
-              text={block.text}
-              type={row.type}
-              isCompleted={row.isCompleted}
-            />
-          ))}
-        </TextInput>
+          onSubmitEditing={this.onSubmitEditing}
+          onFocus={this.onFocus}
+          onChangeText={this.onChangeText}
+          handleKeyPress={this.handleKeyPress}
+          onSelectionChange={this.onSelectionChange}
+          textInput={styles.textInput}
+          inputStyles={inputStyles}
+          alignStyles={alignStyles}
+          row={row}
+          index={index}
+          value={row.value}
+        />
       </View>
     )
   }
@@ -1306,11 +1310,11 @@ class Editor extends React.Component {
 
     return (
       <FlatList
-        data={rows.concat([])}
+        data={rows}
         keyExtractor={i => i.id}
-        extraData={extraData}
+        extraData={this.state}
         keyboardShouldPersistTaps={"always"}
-        keyboardDismissMode="interactive"
+        keyboardDismissMode="on-drag"
         contentContainerStyle={styles.contentContainerStyle}
         renderItem={this.renderItem}
         ListFooterComponent={this.renderFooter}
