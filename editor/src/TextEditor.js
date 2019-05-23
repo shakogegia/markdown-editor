@@ -586,8 +586,11 @@ class Editor extends React.Component {
     
     const newRows = [...rows]
     newRows[index] = newSplittedRows[0]
-    newRows.splice(newActiveRowIndex, 0,newSplittedRows[1])
-    let newSelection = {...selection, id: newSplittedRows[1].id }
+    let newSelection = {...selection }
+    if(newSplittedRows[1]) {
+      newRows.splice(newActiveRowIndex, 0,newSplittedRows[1])
+      newSelection = {...selection, id: newSplittedRows[1].id }
+    }
     this.setState({ rows: newRows, activeRowIndex: newActiveRowIndex, selection: newSelection, extraData: Date.now() }, () => {
       this.focusRow({ index: newActiveRowIndex })
     })
