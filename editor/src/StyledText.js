@@ -5,8 +5,6 @@ import { ROW_TYPES } from "./Constants";
 
 const StyledText = ({ text, textStyles = [], type = ROW_TYPES.TEXT, isCompleted = false }) => {
 
-  let newText = text.replace(/@/, '')
-
   let inputStyles = [styles.default]
 
   // Block Styles
@@ -35,7 +33,7 @@ const StyledText = ({ text, textStyles = [], type = ROW_TYPES.TEXT, isCompleted 
   }
 
   return (
-    <Text style={inputStyles}>{newText}</Text>
+    <Text style={inputStyles}>{text}</Text>
   )
 }
 
