@@ -52,6 +52,10 @@ class StyledInput extends React.Component {
   onEndEditing = () => {
     this.refresh()
   }
+  
+  stylesChanged = () => {
+    this.refresh({ focus: true })
+  }
 
   render () {
 
