@@ -189,7 +189,6 @@ class Editor extends React.Component {
       newState = {...newState, rows: newRows }
       throwOnChange = true
     } else {
-      activeRow.blocks.push({ text: '@', styles: newActiveStyles })
       const newRows = [...rows]
       newRows[activeRowIndex] = activeRow
       newState = {...newState, rows: newRows }
@@ -657,7 +656,9 @@ class Editor extends React.Component {
 
     if (selection.start < selection.end) {
       const newBlocks = removeSelectedText({ selection, row }) 
-      row.blocks = newBlocks
+      const newRows = [].concat(rows)
+      newRows[index].blocks = newBlocks
+      this.setState({ rows: newRows })
     } else if (selection.start === selection.end && selection.start === 0 && prevRow && prevRow.type === ROW_TYPES.HR) {
       this.removeRow({ index: index-1 }, () => {
         this.focusRow({ index: index-1 })
@@ -672,7 +673,7 @@ class Editor extends React.Component {
       const newBlocks = removeSelectedText({ selection, row }) 
       let newRows = [].concat(rows)
       newRows[index].blocks = newBlocks
-      this.setState({ blocks: newRows })
+      this.setState({ rows: newRows })
 
       console.tron.display({
         name: 'Backspace',
@@ -774,7 +775,11 @@ class Editor extends React.Component {
       rows[index].blocks = newBlocks
 
       let newState = {rows: rows, extraData: Date.now() }
-      this.setState(newState)
+      this.setState(newState, () => {
+        if(isStylesChanged) {
+          this.textInputRefs[index].stylesChanged()
+        }
+      })
     }
 
     this.emitOnChange()

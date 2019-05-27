@@ -279,7 +279,12 @@ export const attachStylesToSelectedText = ({ selection, row, newStyles, oldStyle
 }
 
 export const removeSelectedText = ({ selection, row }) => {
-  const { blocks = [] } = row
+  const { blocks = [], value = '' } = row
+  
+  if(selection.end - selection.start === value.length) {
+    return []
+  }
+
   const { startBlock, endBlock } = getSelectedBlocks({ selection, row })
 
   console.tron.display({
