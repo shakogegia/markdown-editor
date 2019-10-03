@@ -189,10 +189,10 @@ class Editor extends React.Component {
       newState = {...newState, rows: newRows }
       throwOnChange = true
     } else {
-      const newRows = [...rows]
-      newRows[activeRowIndex] = activeRow
-      newState = {...newState, rows: newRows }
-      throwOnChange = true
+      // const newRows = [...rows]
+      // newRows[activeRowIndex] = activeRow
+      // newState = {...newState, rows: newRows }
+      // throwOnChange = true
     }
     
 
@@ -203,6 +203,8 @@ class Editor extends React.Component {
       this.emitActiveStyles()
       if(throwOnChange) {
         this.emitOnChange()
+
+        // this.textInputRefs[activeRowIndex].setSelection({ start: selection.start, end: selection.end })
       }
     })
   }
@@ -579,20 +581,25 @@ class Editor extends React.Component {
   // TODO: done
   splitRow = ({ row, index }) => {
     const { rows = [], selection } = this.state
-    const newSplittedRows = splitRow({ row, selection }) || []
+    const newSplittedRows = splitRow({ row, selection })
 
-    let newActiveRowIndex = index+1
-    
-    const newRows = [...rows]
-    newRows[index] = newSplittedRows[0]
-    let newSelection = {...selection }
-    if(newSplittedRows[1]) {
-      newRows.splice(newActiveRowIndex, 0,newSplittedRows[1])
-      newSelection = {...selection, id: newSplittedRows[1].id }
+    if(newSplittedRows) {
+      let newActiveRowIndex = index+1
+      
+      const newRows = [...rows]
+      newRows[index] = newSplittedRows[0]
+      let newSelection = {...selection }
+      if(newSplittedRows[1]) {
+        newRows.splice(newActiveRowIndex, 0,newSplittedRows[1])
+        newSelection = {...selection, id: newSplittedRows[1].id }
+      }
+      this.setState({ rows: newRows, activeRowIndex: newActiveRowIndex, selection: newSelection, extraData: Date.now() }, () => {
+        this.focusRow({ index: newActiveRowIndex })
+      })
+    } else {
+      console.log("Split rows without selection")
     }
-    this.setState({ rows: newRows, activeRowIndex: newActiveRowIndex, selection: newSelection, extraData: Date.now() }, () => {
-      this.focusRow({ index: newActiveRowIndex })
-    })
+
   }
 
   // TODO: done
@@ -682,12 +689,19 @@ class Editor extends React.Component {
     }
   }
 
+  getRowValue = ({ index }) => {
+    return this.textInputRefs[index].getValue()
+  }
+
   // FIXME: check
   handleKeyPress = ({ row: item, index }) => ({ nativeEvent: { key: keyValue }, ...rest }) => {
     const { rows = [], selection, activeStyles } = this.state
     let row = item // Object.assign({}, item)
     const currentRow = item // Object.assign({}, rows[index])
     let blocks = item.blocks // [...currentRow.blocks]
+
+    row.value = this.getRowValue({ index })
+    currentRow.value = this.getRowValue({ index })
 
     // console.log("handleKeyPress fired::", keyValue)
 
@@ -777,7 +791,7 @@ class Editor extends React.Component {
       let newState = {rows: rows, extraData: Date.now() }
       this.setState(newState, () => {
         if(isStylesChanged) {
-          this.textInputRefs[index].stylesChanged()
+          this.textInputRefs[index].stylesChanged({ pointerAt: selection.start, row: newRows[index], keyValue })
         }
       })
     }
@@ -786,7 +800,7 @@ class Editor extends React.Component {
   }
 
   // FIXME: re-write
-  onSelectionChange = ({ row, index }) => (event) => {
+  onSelectionChange = ({ row, index, value }) => (event) => {
     const { selection } = event.nativeEvent
     const { rows = [], activeRowIndex, selection: oldSelection } = this.state
     const activeRow = Object.assign({}, rows[activeRowIndex])
@@ -794,6 +808,10 @@ class Editor extends React.Component {
     if(row.id !== activeRow.id) {
       return
     }
+
+    row.value = value || this.getRowValue({ index })
+
+    console.log(row.value)
     
     if(oldSelection.id === row.id
       && oldSelection.start === selection.start
@@ -856,15 +874,15 @@ class Editor extends React.Component {
 
     if (activeRowIndex !== index) {
       this.setState({ activeRowIndex: index }, () => {
-        if(activeRow.value) {
-          const newSelection = { start: activeRow.value.length, end: activeRow.value.length, id: activeRow.id }
-          const event = { nativeEvent: { selection: newSelection } }
-          this.onSelectionChange({ row: activeRow, index })(event) 
-        } else {
-          const newSelection = { start: 0, end: 0, id: activeRow.id }
-          const event = { nativeEvent: { selection: newSelection } }
-          this.onSelectionChange({ row: activeRow, index })(event) 
-        }
+        // if(activeRow.value) {
+        //   const newSelection = { start: activeRow.value.length, end: activeRow.value.length, id: activeRow.id }
+        //   const event = { nativeEvent: { selection: newSelection } }
+        //   this.onSelectionChange({ row: activeRow, index })(event) 
+        // } else {
+        //   const newSelection = { start: 0, end: 0, id: activeRow.id }
+        //   const event = { nativeEvent: { selection: newSelection } }
+        //   this.onSelectionChange({ row: activeRow, index })(event) 
+        // }
         this.checkActiveRowTypeChanged()
       })
     } else {
@@ -901,7 +919,7 @@ class Editor extends React.Component {
         newStyles = []
       }
 
-      let newState = { activeStyles: newStyles }
+      let newState = {} // { activeStyles: newStyles }
 
       if(activeRowIndex !== index) {
         newState.activeRowIndex = index

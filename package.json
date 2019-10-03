@@ -22,6 +22,7 @@
     "react-native-keyboard-aware-view": "^0.0.14",
     "react-native-lightbox": "^0.8.0",
     "reactotron-react-native": "^3.4.1",
+    "runes": "^0.4.3",
     "shortid": "^2.2.14"
   },
   "devDependencies": {

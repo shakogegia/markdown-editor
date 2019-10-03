@@ -89,6 +89,11 @@ export const parseRawBlock = block => {
   return { row: result, text, type: getBlockType(type) }
 }
 
+export const getRowValueFromBlocks = ({ row = {} }) => {
+  const { blocks = [] } = row
+  return blocks.map(item => item.text).join('')
+}
+
 export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
   if(cursorAt === null && selection.id !== row.id) { return null }
 
@@ -99,7 +104,9 @@ export const getCurrentBlockInRow = ({ selection, row, cursorAt = null }) => {
   let pointerAt = null
   let position = null
 
-  const { blocks = [], value = ''  } = row
+  const { blocks = [] } = row
+
+  const value = getRowValueFromBlocks({ row })
   
   // Cursor is At the Beginning
   if(rowCursorAt === 0) {
@@ -260,12 +267,7 @@ export const attachStylesToSelectedText = ({ selection, row, newStyles, oldStyle
     
   // }
 
-  const data = [...p1, ...newBlocks, ...p2]
-
-  console.tron.display({
-    name: 'data',
-    value: { p1, newBlocks, p2 },
-  })
+  const data = [...p1, ...newBlocks, ...p2].filter(item => !!item.text && item.text.length > 0)
 
   // blocks.splice(startBlock.blockIndex, endBlock.blockIndex-startBlock.blockIndex+1);
 
@@ -348,7 +350,9 @@ export const splitRow = ({ row, selection }) => {
   
   let rows = []
 
-  const { value = '', type, align = 'auto', blocks = [] } = row
+  const { type, align = 'auto', blocks = [] } = row
+
+  const value = getRowValueFromBlocks({ row })
   
   const rowBlocks = blocks.filter(item => item.text)
 
@@ -387,6 +391,11 @@ export const splitRow = ({ row, selection }) => {
   }
 
   rows = [row1, row2]
+
+  console.tron.display({
+    name: 'rows',
+    value: { props: rows },
+  })
 
   return rows
 }

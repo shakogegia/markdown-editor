@@ -7,10 +7,16 @@ class StyledInput extends React.Component {
 
   state = {
     now: null,
-    hide: false
+    hide: false,
+    value: ''
   }
 
   input = null
+
+  componentDidMound() {
+    const { value = '' } = this.props
+    this.setState({ value })
+  }
 
   componentDidUpdate(prevProps) {
     // console.log(prevProps.row)
@@ -23,12 +29,17 @@ class StyledInput extends React.Component {
   handleKeyPress = (e) => {
     const { row, index } = this.props
     this.props.handleKeyPress({ row, index })(e)
+  }
 
-    this.setState({ now: Date.now() })
+  onChangeText = (nv = '') => {
+    const { row, index, onChangeText } = this.props
+    const newValue = nv.replace(/\n/, '')
+    this.setState({ value: newValue })
+    onChangeText({ row, index })(nv)
+  }
 
-    setTimeout(() => {
-      this.forceUpdate()
-    }, 100);
+  getValue = () => {
+    return this.state.value
   }
 
   focus = () => {
@@ -37,13 +48,30 @@ class StyledInput extends React.Component {
     }
   }
 
-  refresh = ({ focus = false } = {}) => {
+  setSelection = ({ start, end }) => {
+    const { row, index, onSelectionChange } = this.props
+
+    this.input.setNativeProps({ selection: { start, end } })
+    setTimeout(() => {
+      this.input.setNativeProps({ selection: { start, end } })
+      console.log({ start, end })
+      // setTimeout(() => {
+        // onSelectionChange({ row, index })({ nativeEvent: { selection: { start, end } } })
+        // setTimeout(() => {
+        //   onSelectionChange({ row, index })({ nativeEvent: { selection: { start, end } } })
+        // });
+      // });
+    })
+  }
+
+  refresh = ({ focus = false } = {}, callback = () => {}) => {
     this.setState({ hide: true }, () => {
       setTimeout(() => {
         this.setState({ hide: false }, () => {
           if(focus) {
             this.input.focus()
           }
+          callback()
         })
       }, 0);
     })
@@ -53,8 +81,16 @@ class StyledInput extends React.Component {
     this.refresh()
   }
   
-  stylesChanged = () => {
-    this.refresh({ focus: true })
+  stylesChanged = ({ pointerAt, row, keyValue }) => {
+    const { row: { value = '' }, index } = this.props
+    this.refresh({ focus: true }, () => {
+      if (value.length > pointerAt) {
+        this.setSelection({ start: pointerAt + 1, end: pointerAt + 1 })
+      } else {
+        // const newValue = row.blocks.map(i => i.text).join('')
+        // this.props.onSelectionChange({ row: this.props.row, index, value: newValue })({ nativeEvent: { selection: { start: pointerAt + 1, end: pointerAt + 1 } } })
+      }
+    })
   }
 
   render () {
@@ -100,7 +136,7 @@ class StyledInput extends React.Component {
         placeholder={placeholder}
         onSubmitEditing={onSubmitEditing({ row, index })}
         onFocus={onFocus({ row, index })}
-        onChangeText={onChangeText({ row, index })}
+        onChangeText={this.onChangeText}
         onKeyPress={this.handleKeyPress}
         onSelectionChange={onSelectionChange({ row, index })}
         onEndEditing={this.onEndEditing}
