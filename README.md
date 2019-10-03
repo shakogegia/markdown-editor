@@ -4,10 +4,7 @@ Rich text editor for React Native
 
 Supports Draft.js and Markdown
 
-
-![React Native WYSIWYG](./demo.gif)
-
-
+<img src="./demo.gif" width="250" align="middle" />
 
 ### To Do
 
