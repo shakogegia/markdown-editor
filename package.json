@@ -14,7 +14,7 @@
     "expo-asset-utils": "1.1.1",
     "expo-pixi": "1.0.1",
     "fbemitter": "^2.1.1",
-    "lodash": "^4.17.13",
+    "lodash": "^4.17.19",
     "native-base": "^2.12.1",
     "react": "16.5.0",
     "react-native": "https://github.com/expo/react-native/archive/sdk-32.0.0.tar.gz",
